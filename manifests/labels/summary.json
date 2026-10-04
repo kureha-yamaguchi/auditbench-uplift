@@ -1,0 +1,43 @@
+{
+ "train": {
+  "by_status": {
+   "supported_positive": 10
+  },
+  "by_dataset_task_status": {
+   "lab/exfiltration/supported_positive": 2,
+   "lab/lm/supported_positive": 3,
+   "lab/persistence/supported_positive": 2,
+   "optc/lm/supported_positive": 2,
+   "optc/persistence/supported_positive": 1
+  },
+  "quarantined": []
+ },
+ "dev": {
+  "by_status": {
+   "supported_positive": 13
+  },
+  "by_dataset_task_status": {
+   "lab/exfiltration/supported_positive": 1,
+   "lab/lm/supported_positive": 1,
+   "lab/persistence/supported_positive": 2,
+   "optc/exfiltration/supported_positive": 1,
+   "optc/lm/supported_positive": 5,
+   "optc/persistence/supported_positive": 3
+  },
+  "quarantined": []
+ },
+ "test": {
+  "n_targets": 20,
+  "note": "test is sealed: pass --allow-test and set AUDITBENCH_ALLOW_TEST=1 to build or inspect it",
+  "by_status": {
+   "supported_positive": 15,
+   "ambiguous": 5
+  }
+ },
+ "unplaced": [
+  {
+   "target_id": "lab:lm:lm-scenario3:0",
+   "reason": "annotation has no concrete entity (placeholder 'no value')"
+  }
+ ]
+}

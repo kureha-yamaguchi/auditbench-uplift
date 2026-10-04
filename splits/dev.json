@@ -1,0 +1,317 @@
+{
+ "split": "dev",
+ "groups": [
+  {
+   "group_id": "g:lab/attack-linux-scenario2",
+   "dataset": "lab",
+   "label": "attack",
+   "os": [
+    "linux"
+   ],
+   "hosts": [],
+   "tasks": [
+    "classification"
+   ],
+   "scenario_keys": [
+    "lab/attack-linux-scenario2"
+   ],
+   "files": [
+    {
+     "rel_path": "lab/task_classification/edge/edge_2024-12-11T12-30-to-2024-12-11T12-31_attack-linux-scenario2.log",
+     "sha256": "d793c7ea6c6f2457aa75e50548c128377980f94056ee8aa6b654fd6e19bbfafa",
+     "task": "classification",
+     "representation": "edge",
+     "lines": 68
+    },
+    {
+     "rel_path": "lab/task_classification/raw/raw_2024-12-11T12-30-to-2024-12-11T12-31_attack-linux-scenario2.log",
+     "sha256": "aa61559652b7e428f2f0fd39a8bfefb4bf09991df1b067f7980dbbbd3300ba24",
+     "task": "classification",
+     "representation": "raw",
+     "lines": 238
+    }
+   ]
+  },
+  {
+   "group_id": "g:lab/benign-scenario6",
+   "dataset": "lab",
+   "label": "benign",
+   "os": [
+    "linux"
+   ],
+   "hosts": [],
+   "tasks": [
+    "classification",
+    "exfiltration",
+    "lm",
+    "persistence"
+   ],
+   "scenario_keys": [
+    "lab/benign-scenario6"
+   ],
+   "files": [
+    {
+     "rel_path": "lab/task_classification/edge/edge_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "f8ee604f76155d521b4127a77aafaeb872a1d0f3663675dc645f9836a73a3612",
+     "task": "classification",
+     "representation": "edge",
+     "lines": 1207
+    },
+    {
+     "rel_path": "lab/task_classification/raw/raw_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "4d5f91e2799bd9a28e406be469aab49460d86297b748bfbb73555a2853a8f67a",
+     "task": "classification",
+     "representation": "raw",
+     "lines": 5869
+    },
+    {
+     "rel_path": "lab/task_exfiltration/edge/edge_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "f8ee604f76155d521b4127a77aafaeb872a1d0f3663675dc645f9836a73a3612",
+     "task": "exfiltration",
+     "representation": "edge",
+     "lines": 1207
+    },
+    {
+     "rel_path": "lab/task_exfiltration/raw/raw_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "4d5f91e2799bd9a28e406be469aab49460d86297b748bfbb73555a2853a8f67a",
+     "task": "exfiltration",
+     "representation": "raw",
+     "lines": 5869
+    },
+    {
+     "rel_path": "lab/task_lm/edge/edge_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "f8ee604f76155d521b4127a77aafaeb872a1d0f3663675dc645f9836a73a3612",
+     "task": "lm",
+     "representation": "edge",
+     "lines": 1207
+    },
+    {
+     "rel_path": "lab/task_lm/raw/raw_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "4d5f91e2799bd9a28e406be469aab49460d86297b748bfbb73555a2853a8f67a",
+     "task": "lm",
+     "representation": "raw",
+     "lines": 5869
+    },
+    {
+     "rel_path": "lab/task_persistence/edge/edge_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "f8ee604f76155d521b4127a77aafaeb872a1d0f3663675dc645f9836a73a3612",
+     "task": "persistence",
+     "representation": "edge",
+     "lines": 1207
+    },
+    {
+     "rel_path": "lab/task_persistence/raw/raw_2025-05-31T17-56-to-2025-05-31T18-08_benign-scenario6.log",
+     "sha256": "4d5f91e2799bd9a28e406be469aab49460d86297b748bfbb73555a2853a8f67a",
+     "task": "persistence",
+     "representation": "raw",
+     "lines": 5869
+    }
+   ]
+  },
+  {
+   "group_id": "g:lab/exfiltration-scenario2",
+   "dataset": "lab",
+   "label": "attack",
+   "os": [
+    "linux"
+   ],
+   "hosts": [],
+   "tasks": [
+    "exfiltration"
+   ],
+   "scenario_keys": [
+    "lab/exfiltration-scenario2"
+   ],
+   "files": [
+    {
+     "rel_path": "lab/task_exfiltration/edge/edge_2024-10-28T07-03-to-2024-10-28T07-39_exfiltration-scenario2.log",
+     "sha256": "385ca1a458933bd48871514ff20e4006014558ca810d06733759ccca4e0f7b61",
+     "task": "exfiltration",
+     "representation": "edge",
+     "lines": 947
+    },
+    {
+     "rel_path": "lab/task_exfiltration/raw/raw_2024-10-28T07-03-to-2024-10-28T07-39_exfiltration-scenario2.log",
+     "sha256": "ec2a9d74c7eb6a0444468d67415705090107d76e97c2fc550a9328f8fd5bb827",
+     "task": "exfiltration",
+     "representation": "raw",
+     "lines": 2156
+    }
+   ]
+  },
+  {
+   "group_id": "g:lab/lm-scenario4",
+   "dataset": "lab",
+   "label": "attack",
+   "os": [
+    "windows"
+   ],
+   "hosts": [],
+   "tasks": [
+    "lm"
+   ],
+   "scenario_keys": [
+    "lab/lm-scenario4"
+   ],
+   "files": [
+    {
+     "rel_path": "lab/task_lm/edge/edge_2024-11-27T16-01-to-2024-11-27T16-05_lm-scenario4.log",
+     "sha256": "ba5d7b7d6a549a92eb921af63a2de8c301a620fffaabbd97a3cc6630a239d9b3",
+     "task": "lm",
+     "representation": "edge",
+     "lines": 1051
+    }
+   ]
+  },
+  {
+   "group_id": "g:lab/persistence-scenario2",
+   "dataset": "lab",
+   "label": "attack",
+   "os": [
+    "linux"
+   ],
+   "hosts": [],
+   "tasks": [
+    "persistence"
+   ],
+   "scenario_keys": [
+    "lab/persistence-scenario2"
+   ],
+   "files": [
+    {
+     "rel_path": "lab/task_persistence/edge/edge_2024-11-16T02-13-to-2024-11-16T02-21_persistence-scenario2.log",
+     "sha256": "548127db4426e869593b466d9411d15192d832f2947676993f5902a3c02b4105",
+     "task": "persistence",
+     "representation": "edge",
+     "lines": 188
+    },
+    {
+     "rel_path": "lab/task_persistence/raw/raw_2024-11-16T02-13-to-2024-11-16T02-21_persistence-scenario2.log",
+     "sha256": "c1f734a17efdb516d4d8be21dd96cb1244a2d076e8622ba35eaa5e7c3545a48b",
+     "task": "persistence",
+     "representation": "raw",
+     "lines": 833
+    }
+   ]
+  },
+  {
+   "group_id": "g:optc/h201_velox-benign-scenario10",
+   "dataset": "optc",
+   "label": "benign",
+   "os": [
+    "windows"
+   ],
+   "hosts": [
+    "h201"
+   ],
+   "tasks": [
+    "classification",
+    "exfiltration",
+    "lm",
+    "persistence"
+   ],
+   "scenario_keys": [
+    "optc/h201_velox-benign-scenario10"
+   ],
+   "files": [
+    {
+     "rel_path": "optc/task_classification/edge/edge_2019-09-22T12-15-11-to-2019-09-22T12-15-31_h201_velox-benign-scenario10.log",
+     "sha256": "6c22321acbc27cb309ac792faf2bce534ad5b6c3a4e9fbc78a9c392504737060",
+     "task": "classification",
+     "representation": "edge",
+     "lines": 1033
+    },
+    {
+     "rel_path": "optc/task_exfiltration/edge/edge_2019-09-22T12-15-11-to-2019-09-22T12-15-31_h201_velox-benign-scenario10.log",
+     "sha256": "6c22321acbc27cb309ac792faf2bce534ad5b6c3a4e9fbc78a9c392504737060",
+     "task": "exfiltration",
+     "representation": "edge",
+     "lines": 1033
+    },
+    {
+     "rel_path": "optc/task_lm/edge/edge_2019-09-22T12-15-11-to-2019-09-22T12-15-31_h201_velox-benign-scenario10.log",
+     "sha256": "6c22321acbc27cb309ac792faf2bce534ad5b6c3a4e9fbc78a9c392504737060",
+     "task": "lm",
+     "representation": "edge",
+     "lines": 1033
+    },
+    {
+     "rel_path": "optc/task_persistence/edge/edge_2019-09-22T12-15-11-to-2019-09-22T12-15-31_h201_velox-benign-scenario10.log",
+     "sha256": "6c22321acbc27cb309ac792faf2bce534ad5b6c3a4e9fbc78a9c392504737060",
+     "task": "persistence",
+     "representation": "edge",
+     "lines": 1033
+    }
+   ]
+  },
+  {
+   "group_id": "g:optc/h501_attack-scenario3",
+   "dataset": "optc",
+   "label": "attack",
+   "os": [
+    "windows"
+   ],
+   "hosts": [
+    "h501"
+   ],
+   "tasks": [
+    "classification",
+    "exfiltration",
+    "lm",
+    "persistence"
+   ],
+   "scenario_keys": [
+    "optc/h501_attack-scenario3",
+    "optc/h501_exfiltration-scenario2",
+    "optc/h501_lm-scenario3",
+    "optc/h501_lm-scenario5",
+    "optc/h501_persistence-scenario2",
+    "optc/h501_persistence-scenario4"
+   ],
+   "files": [
+    {
+     "rel_path": "optc/task_classification/edge/edge_2019-09-24T11-09-18-to-2019-09-24T11-09-39_h501_attack-scenario3.log",
+     "sha256": "4b795d5469f75f4490ef927f9e105299fb01af8fe4732ffc41500ebb5c99bfca",
+     "task": "classification",
+     "representation": "edge",
+     "lines": 1833
+    },
+    {
+     "rel_path": "optc/task_exfiltration/edge/edge_2019-09-24T13-43-01-to-2019-09-24T13-43-21_h501_exfiltration-scenario2.log",
+     "sha256": "9d7ba479d6d406ab3152569b4658c25065d606f8dc55702ba206c96fdab91da2",
+     "task": "exfiltration",
+     "representation": "edge",
+     "lines": 606
+    },
+    {
+     "rel_path": "optc/task_lm/edge/edge_2019-09-24T10-45-18-to-2019-09-24T10-45-38_h501_lm-scenario3.log",
+     "sha256": "c2fbb4767b3fa4f56e84b8b5748672830b2e63e85238796839ad7a2a19f9fb3f",
+     "task": "lm",
+     "representation": "edge",
+     "lines": 2041
+    },
+    {
+     "rel_path": "optc/task_lm/edge/edge_2019-09-24T11-09-11-to-2019-09-24T11-09-31_h501_lm-scenario5.log",
+     "sha256": "d26016dd980a45acb213ef9abce68081299f2b3ecde3e4e582c6a8922c39ecb8",
+     "task": "lm",
+     "representation": "edge",
+     "lines": 953
+    },
+    {
+     "rel_path": "optc/task_persistence/edge/edge_2019-09-24T11-32-53-to-2019-09-24T11-33-13_h501_persistence-scenario2.log",
+     "sha256": "34cf54907bb16d7d6fe2922ba020a5cb12eb08743c5776b91130bdcc2ab13b33",
+     "task": "persistence",
+     "representation": "edge",
+     "lines": 2519
+    },
+    {
+     "rel_path": "optc/task_persistence/edge/edge_2019-09-24T13-10-00-to-2019-09-24T13-10-20_h501_persistence-scenario4.log",
+     "sha256": "ab68ce95c19796437a33ec5be88443a9ecba0f78b2b3bd7cfc7520fdc591eaa5",
+     "task": "persistence",
+     "representation": "edge",
+     "lines": 1209
+    }
+   ]
+  }
+ ]
+}

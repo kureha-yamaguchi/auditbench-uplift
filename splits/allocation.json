@@ -1,0 +1,96 @@
+{
+ "seed": 20261003,
+ "ladder": [
+  "0.5/0.1/0.4",
+  "0.5/0.15/0.35",
+  "0.5/0.2/0.3"
+ ],
+ "chosen_fractions": [
+  0.5,
+  0.1,
+  0.4
+ ],
+ "feasible": true,
+ "violations": [],
+ "attempts": [
+  {
+   "fractions": [
+    0.5,
+    0.1,
+    0.4
+   ],
+   "feasible": true,
+   "violations": [],
+   "score": 0.22770785246299322
+  }
+ ],
+ "counts": {
+  "groups": {
+   "train": 18,
+   "dev": 7,
+   "test": 15
+  },
+  "dataset": {
+   "lab/dev": 5,
+   "lab/test": 8,
+   "lab/train": 11,
+   "optc/dev": 2,
+   "optc/test": 7,
+   "optc/train": 7
+  },
+  "task_label": {
+   "classification/attack": {
+    "dev": 2,
+    "test": 3,
+    "train": 4
+   },
+   "classification/benign": {
+    "dev": 2,
+    "test": 6,
+    "train": 7
+   },
+   "exfiltration/attack": {
+    "dev": 2,
+    "test": 3,
+    "train": 2
+   },
+   "exfiltration/benign": {
+    "dev": 2,
+    "test": 6,
+    "train": 7
+   },
+   "lm/attack": {
+    "dev": 2,
+    "test": 3,
+    "train": 4
+   },
+   "lm/benign": {
+    "dev": 2,
+    "test": 6,
+    "train": 7
+   },
+   "persistence/attack": {
+    "dev": 2,
+    "test": 3,
+    "train": 3
+   },
+   "persistence/benign": {
+    "dev": 2,
+    "test": 6,
+    "train": 7
+   }
+  },
+  "os": {
+   "linux/dev": 4,
+   "linux/test": 7,
+   "linux/train": 7,
+   "windows/dev": 3,
+   "windows/test": 8,
+   "windows/train": 11
+  }
+ },
+ "constraints": {
+  "min_dev_groups_per_task_and_label": 2,
+  "min_train_positive_groups_per_task": 2
+ }
+}

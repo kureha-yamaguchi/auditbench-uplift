@@ -1,0 +1,72 @@
+{
+ "dev": {
+  "classification": {
+   "attack": 3,
+   "benign": 3
+  },
+  "exfiltration": {
+   "benign": 13,
+   "negative_attack_file": 5,
+   "positive": 3
+  },
+  "lm": {
+   "benign": 13,
+   "negative_attack_file": 6,
+   "positive": 6
+  },
+  "persistence": {
+   "benign": 13,
+   "negative_attack_file": 9,
+   "positive": 4
+  }
+ },
+ "train": {
+  "classification": {
+   "attack": 6,
+   "benign": 9
+  },
+  "exfiltration": {
+   "benign": 102,
+   "negative_attack_file": 11,
+   "positive": 4
+  },
+  "lm": {
+   "benign": 102,
+   "negative_attack_file": 12,
+   "positive": 5
+  },
+  "persistence": {
+   "benign": 102,
+   "negative_attack_file": 9,
+   "positive": 5
+  }
+ },
+ "independent_groups": {
+  "dev/classification/attack": 2,
+  "dev/classification/benign": 2,
+  "dev/exfiltration/benign": 2,
+  "dev/exfiltration/negative_attack_file": 2,
+  "dev/exfiltration/positive": 2,
+  "dev/lm/benign": 2,
+  "dev/lm/negative_attack_file": 2,
+  "dev/lm/positive": 2,
+  "dev/persistence/benign": 2,
+  "dev/persistence/negative_attack_file": 1,
+  "dev/persistence/positive": 2,
+  "train/classification/attack": 4,
+  "train/classification/benign": 7,
+  "train/exfiltration/benign": 7,
+  "train/exfiltration/negative_attack_file": 2,
+  "train/exfiltration/positive": 2,
+  "train/lm/benign": 7,
+  "train/lm/negative_attack_file": 3,
+  "train/lm/positive": 4,
+  "train/persistence/benign": 7,
+  "train/persistence/negative_attack_file": 1,
+  "train/persistence/positive": 3
+ },
+ "test": {
+  "n_units": 325,
+  "note": "test is sealed: pass --allow-test and set AUDITBENCH_ALLOW_TEST=1 to build or inspect it"
+ }
+}

@@ -1,0 +1,32 @@
+[project]
+name = "auditbench-uplift"
+version = "0.1.0"
+description = "Defensive GRPO training on AuditBench with Harbor: provenance splits, strict grader, task builder, training configs."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "harbor==0.23.0",
+    "pyyaml>=6.0",
+    "wandb>=0.30.0",
+    "huggingface_hub>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "numpy>=1.26",   # needed only by the upstream AuditBench metric code in the differential test
+]
+
+[project.scripts]
+auditbench-harbor = "auditbench_harbor.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["auditbench_harbor", "grader", "training"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

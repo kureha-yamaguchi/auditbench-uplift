@@ -1,0 +1,4 @@
+{"task": "lm", "label": "positive", "dataset": "lab", "representation": "edge", "os": "linux",
+ "entity_kind": "host", "precision": "second", "n_lines": 5,
+ "targets": [{"target_id": "t1", "timestamps_norm": ["2025-06-05 09:19:40"], "aliases": ["34.57.165.193"], "status": "supported_positive"},
+             {"target_id": "amb", "timestamps_norm": ["2025-06-05 09:19:50"], "aliases": ["10.0.0.9"], "status": "ambiguous"}]}

@@ -1,0 +1,43 @@
+{
+ "n_draws": 320,
+ "task_frequency": {
+  "classification": 0.234375,
+  "lm": 0.246875,
+  "persistence": 0.2875,
+  "exfiltration": 0.23125
+ },
+ "task_class_frequency": {
+  "classification/negative": 0.115625,
+  "classification/positive": 0.11875,
+  "exfiltration/negative": 0.1125,
+  "exfiltration/positive": 0.11875,
+  "lm/negative": 0.115625,
+  "lm/positive": 0.13125,
+  "persistence/negative": 0.140625,
+  "persistence/positive": 0.146875
+ },
+ "distinct_units": 108,
+ "distinct_groups": 18,
+ "groups_never_drawn": [],
+ "group_exposure": {
+  "g:lab/attack-linux-scenario4": 8,
+  "g:lab/attack-windows-combinationscenario5": 13,
+  "g:lab/attack-windows-lmscenario1": 28,
+  "g:lab/benign-scenario3": 14,
+  "g:lab/benign-scenario4": 17,
+  "g:lab/exfiltration-scenario4": 25,
+  "g:lab/exfiltration-scenario5": 30,
+  "g:lab/lm-scenario5": 16,
+  "g:lab/lm-scenario7": 10,
+  "g:lab/persistence-scenario1": 18,
+  "g:lab/persistence-scenario5": 14,
+  "g:optc/h051_attack-scenario4": 42,
+  "g:optc/h068_benign-scenario5": 16,
+  "g:optc/h201_velox-benign-scenario6": 10,
+  "g:optc/h201_velox-benign-scenario7": 13,
+  "g:optc/h201_velox-benign-scenario8": 12,
+  "g:optc/h418_benign-scenario3": 17,
+  "g:optc/h660_lm-scenario4": 17
+ },
+ "missing_strata": []
+}

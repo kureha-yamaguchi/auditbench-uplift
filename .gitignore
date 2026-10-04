@@ -1,0 +1,19 @@
+# secrets
+.env
+# python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+# generated, large, or run-specific
+tasks/*/
+trajectories/*
+!trajectories/README.md
+checkpoints/*
+!checkpoints/README.md
+jobs/
+wandb/
+*.log
+!grader/fixtures/*.log
+.ruff_cache/

@@ -1,0 +1,45 @@
+# Frozen inference contract for baseline, training rollouts and dev evaluation (PLAN.md §6.1).
+# Any change to this file requires rerunning the affected baselines.
+contract_version: inference-contract-v1
+model:
+  id: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  served_model_name: Qwen3-8B            # Harbor model name becomes hosted_vllm/Qwen3-8B
+  dtype: bfloat16
+  chat_template: skyrl_train/utils/templates/qwen3_acc_thinking.jinja2   # retains thinking across turns
+  thinking: true
+  rope:
+    max_position_embeddings: 32768
+    yarn: null                            # pilot 65536 with factor 2 only if 32k is inadequate
+agent:
+  name: terminus-2
+  parser: json
+  max_turns: 32
+  timeout_sec: 1200
+  enable_summarize: false                 # never silently summarise history
+  store_all_messages: true
+  collect_rollout_details: true           # token ids and logprobs for the trajectory record
+  record_terminal_session: true
+sampling:
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  min_p: 0.0
+  presence_penalty: 0.0
+  frequency_penalty: 0.0
+  max_tokens_per_completion: 8192         # clipped to remaining context by the server
+context:
+  max_model_len: 32768
+  observation_cap: "10000 bytes per tool output (Terminus-2 _limit_output_length; not configurable in 0.23.0; full output stays in the sandbox)"
+  observation_cap_tokens_planned: 2048    # plan target; measure the realised token count of 10,000 bytes in the smoke test
+environment:
+  type: modal
+  cpus: 1
+  memory_mb: 1024
+  storage_mb: 1024
+  network_mode: no-network
+  verifier: separate
+attempts:
+  baseline_attempts: 5
+  group_size_for_variance_pilot: 8
+  seed_schedule: "seed = base_seed + 1000 * attempt_index + unit_ordinal; base_seed differs per phase (baseline 1, dev-eval 2, pilot 3)"

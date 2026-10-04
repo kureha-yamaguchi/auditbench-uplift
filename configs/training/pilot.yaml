@@ -1,0 +1,19 @@
+# Compatibility and correctness pilot (PLAN.md §7.2): at most ten iterations, dev for monitoring only.
+run_name: pilot
+arm: defence
+seed: 3
+data: {train_manifest: manifests/sampling/pilot.jsonl, train_dir: ~/data/auditbench/pilot, dev_dir: ~/data/auditbench/dev}
+iterations: 10
+prompts_per_iteration: 32
+samples_per_prompt: 8
+eval_interval: 5
+eval_attempts: 5
+ckpt_interval: 5
+hf_save_interval: 5
+optimizer: {lr: 1.0e-6, betas: [0.9, 0.999], eps: 1.0e-8, weight_decay: 0.0, grad_clip: 1.0, scheduler: constant}
+algorithm: {advantage_estimator: grpo, grpo_norm_by_std: false, use_kl_loss: false, loss_reduction: seq_mean_token_sum_norm, eps_clip_low: 0.2, eps_clip_high: 0.2, update_epochs_per_batch: 1, dynamic_sampling: off, apply_overlong_filtering: true}
+model: {path: Qwen/Qwen3-8B, revision: b968826d9c46dd6066d109eabc6255188de91218, max_model_len: 32768}
+strategy: fsdp2
+reward_mode: strict
+caps: {max_rollouts: 2560, max_gpu_hours: 12, max_usd: 400}
+resume_mode: none

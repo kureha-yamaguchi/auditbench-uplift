@@ -1,0 +1,63 @@
+{
+ "schema_version": "auditbench-agent-v1",
+ "auditbench": {
+  "path": "/Users/kyamaguchi/Desktop/auditlogsbench",
+  "commit": "369ad441f2876245d0db19990c77ccbcb74a0a3a",
+  "dirty": false,
+  "diff_sha256": null,
+  "matches_pinned": true
+ },
+ "annotation_sha256": {
+  "lab/groundtruth-exfiltration.jsonl": "c5465ff9b93631aad4eb27954a6af5becf6ddab344f71bc0c9256c4ea04b8512",
+  "lab/groundtruth-lm.jsonl": "fa3762d2ff3cda04aebb90b022215a7e4978d494d886cffae52d5dbeb7f84ead",
+  "lab/groundtruth-persistence.jsonl": "cdd491e054afb48515da670122157077fd4fb9ee04309e5562eaed8ca956bf9f",
+  "optc/groundtruth-exfiltration.jsonl": "37cad6837c17dc6cc38cf7cb62587dd925260ea9d8dab38b753624e70e3b6b94",
+  "optc/groundtruth-lm.jsonl": "f99b0dc8a56ef2ced226dcc8a6a19d2996de4d97e0ed348be9a6e273ff3f5b0f",
+  "optc/groundtruth-persistence.jsonl": "6c736c83d2710b2678e0c1cab27e3b0b26bc916687626d316f739e7ededb49c1"
+ },
+ "inventory_summary": {
+  "files": 129,
+  "distinct_contents": 69,
+  "byte_identical_groups": 20,
+  "scenario_keys": 51,
+  "by_source": {
+   "lab edge": {
+    "classification_files": 10,
+    "investigation_files": 30,
+    "nominal_chunks": 129
+   },
+   "lab raw": {
+    "classification_files": 8,
+    "investigation_files": 25,
+    "nominal_chunks": 126
+   },
+   "optc edge": {
+    "classification_files": 15,
+    "investigation_files": 41,
+    "nominal_chunks": 482
+   }
+  },
+  "parse_failures_total": 0,
+  "nonmonotonic_total": 0
+ },
+ "python": "3.12.14",
+ "packages": {
+  "harbor": "0.23.0",
+  "wandb": "0.30.0",
+  "pyyaml": "6.0.3",
+  "huggingface_hub": "1.33.0"
+ },
+ "model": {
+  "id": "Qwen/Qwen3-8B",
+  "revision": "b968826d9c46dd6066d109eabc6255188de91218"
+ },
+ "control_pool": {
+  "id": "open-thoughts/OpenThoughts-TB-dev",
+  "revision": "0d54f719f34dca712c8d6ef0f51df4670a2a287a"
+ },
+ "upstream_refs": {
+  "harbor_train_commit": "9310ef653ae6af33d1ec11d477fdc9689461ec41",
+  "skyrl_main_commit_at_review": "7daa466644ef135ea6f5305e7cf0ed261fc3e020",
+  "harbor_main_commit_at_review": "3e30cca047a4d0dc1fb209bf5a74ff761b794b90"
+ }
+}

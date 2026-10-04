@@ -1,0 +1,30 @@
+{
+ "pod": {
+  "id": "mybrp3ln5nchvv",
+  "name": "auditbench-grpo",
+  "gpu": "4x NVIDIA H200 SXM",
+  "cloud": "SECURE",
+  "data_center": "EU-FR-1",
+  "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+  "cuda": "12.8",
+  "vcpu": 96,
+  "host_ram_gb": 1007,
+  "container_disk_gb": 300,
+  "usd_per_hour": 18.36,
+  "created_at": "2026-10-04T08:38:00Z"
+ },
+ "network_volume": {
+  "id": "zues5s7zwd",
+  "name": "auditbench-uplift-durable",
+  "size_gb": 300,
+  "type": "HIGH_PERFORMANCE",
+  "mount": "/workspace"
+ },
+ "cap_usd_total": 1500,
+ "notes": [
+  "2026-10-04: pod cannot run nested containers (no user namespaces, no mount capability); Docker/Podman sandboxes on the node are impossible.",
+  "2026-10-04: W&B serverless sandboxes return 'entity not found' for this account; backend unavailable.",
+  "2026-10-04: ~7.3 h of idle pod time (~$134) accrued between operator turns before bootstrap started; pod to be stopped whenever no job is running.",
+  "sandbox backend decision pending: Modal tokens requested from the user; fallback is a chroot environment with no network isolation (recorded deviation)."
+ ]
+}
