@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
-# One-time pod setup (runs on the pod via scripts/pod.sh bootstrap). Idempotent.
-#   - Docker (Harbor sandboxes on the node), uv, harbor-train at the pinned commit with its venv
-#   - this repo installed into that venv; durable dirs on the network volume at /workspace
-#   - environment record for the version manifest
+# Node setup, run by SkyPilot's `setup` block on every launch. Idempotent and fast when the network
+# volume already holds the venv and model cache.
+#   - copies the synced workdir (~/sky_workdir) to /workspace/auditbench/auditbench-uplift
+#   - uv, harbor-train at the pinned commit with its venv, this repo installed into it
+#   - Qwen3-8B cached under /workspace/auditbench/hf; environment record for the version manifest
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 HARBOR_TRAIN_REF=9310ef653ae6af33d1ec11d477fdc9689461ec41
 DURABLE=/workspace/auditbench            # RunPod network volume mount; everything lives here so a stopped pod loses nothing
 HT="$DURABLE/harbor-train"
 export HF_HOME="$DURABLE/hf" UV_CACHE_DIR="$DURABLE/uv-cache"
-mkdir -p "$DURABLE"/{runs,jobs,trajectories,manifests,data,hf,uv-cache}
+mkdir -p "$DURABLE"/{runs,jobs,trajectories,manifests,data,hf,uv-cache,auditbench-uplift}
+SRC="${SKY_WORKDIR:-$HOME/sky_workdir}"
+[ -d "$SRC" ] && rsync -rlptD --no-owner --no-group --delete --exclude .venv --exclude .env --exclude 'tasks/test' --exclude jobs "$SRC/" "$DURABLE/auditbench-uplift/"
 ln -sfn "$DURABLE/auditbench-uplift" ~/auditbench-uplift
 [ -n "${WANDB_API_KEY:-}" ] || { echo "WANDB_API_KEY missing in session"; exit 1; }
 
-if [ "${AUDITBENCH_SANDBOX:-docker}" = docker ]; then
-  command -v docker >/dev/null || { curl -fsSL https://get.docker.com | sh; }
-  (docker info >/dev/null 2>&1) || { (dockerd > /var/log/dockerd.log 2>&1 &) ; sleep 8; docker info >/dev/null; }
-fi
-apt-get update -qq && apt-get install -y -qq git rsync tmux jq ripgrep >/dev/null
+command -v rsync >/dev/null && command -v tmux >/dev/null || { apt-get update -qq && apt-get install -y -qq git rsync tmux jq ripgrep >/dev/null; }
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 

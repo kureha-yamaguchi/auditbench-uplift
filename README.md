@@ -24,8 +24,8 @@ Nothing here has touched a model. Test-split tasks are sealed (never built witho
 auditbench_harbor/   inventory, provenance graph, split allocation, label manifest, windows, Harbor task builder, CLI
 grader/              stdlib-only strict grader (copied into every task's tests/): schema, matching, reward, compat scorer, verifier
 training/            balanced sampler, trajectory indexing, §5.2 metrics, §5.3 selection, W&B helpers
-configs/             inference contract, Harbor trial/job configs, training run configs
-scripts/             pipeline, pod (SSH) and run tooling (see below)
+configs/             inference contract, Harbor trial/job configs, training run configs, SkyPilot cluster spec
+scripts/             pipeline and run tooling (see below)
 manifests/           generated: versions, inventory, groups, labels (per split), units, sampling manifests, control screening
 splits/              generated: train/dev/test group files, edge list with evidence, allocation record, README
 tasks/               generated Harbor tasks (git-ignored); tasks/<split>/<opaque id>/
@@ -68,33 +68,32 @@ the log, one entity, `source_lines`, `verdict`); see any `instruction.md`. Rewar
 success (all supported targets matched, zero unmatched high-confidence findings, grounded evidence);
 diagnostics are separate from `reward.json`. Upstream-convention counts come from `grader/compat.py`.
 
-## Runs (Gates C–E, need a GPU pod)
+## Runs (Gates C–E, SkyPilot on RunPod, Modal sandboxes)
 
-Infrastructure route (amended 2026-10-04): the RunPod account is connected through the RunPod MCP
-plugin (browser sign-in, no API key stored); the pod is driven over SSH; sandboxes are Harbor Docker
-environments on the node (`AUDITBENCH_SANDBOX=docker`, Modal optional); a $1,500 total cap is
-metered by `scripts/spend_guard.py`.
+Infrastructure (amended 2026-10-05): SkyPilot launches a 4×H200 Secure Cloud node with the RunPod API key
+and attaches the persistent network volume; Modal provides the sandboxes (RunPod pods cannot run nested
+containers); every phase runs under `scripts/spend_guard.py` against the $1,500 cap and stops the pod when it ends.
 
 ```bash
-# pod: create a 4xH200 Secure Cloud pod with your SSH public key via the RunPod plugin, mount a network
-# volume at /workspace, then record its SSH endpoint in .env (POD_SSH_HOST/PORT/KEY)
-scripts/pod.sh bootstrap                 # rsync repo, install Docker/uv/harbor-train@pinned, cache Qwen3-8B, record environment
-scripts/pod.sh env "cd ~/auditbench-uplift && python scripts/spend_guard.py watch --ledger /workspace/auditbench/spend.json --phase setup_smoke_baseline --rate <pod $/h> --stop-file /workspace/auditbench/STOP --stop-cmd 'pkill -f harbor' &"
+# one-time: credentials for SkyPilot, adopt the existing volume
+printf '[default]\napi_key = "%s"\n' "$RUNPOD_API_KEY" > ~/.runpod/config.toml && sky check runpod
+sky volumes apply --name auditbench-uplift-durable --infra runpod/fr/EU-FR-1 --type runpod-network-volume --size 300 --use-existing -y
 
-# step 1: smoke, then baseline (five attempts per train and dev task) against vLLM on the pod
-scripts/pod.sh env "cd ~/auditbench-uplift && bash scripts/smoke_test.sh docker"
-scripts/pod.sh env "cd ~/auditbench-uplift && AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 bash scripts/run_baseline.sh baseline"
-scripts/pod.sh pull '~/auditbench-uplift/jobs/baseline' jobs/
-python scripts/index_trajectories.py jobs/baseline --name baseline-dev --split dev
-python scripts/score_job.py trajectories/baseline-dev.jsonl --split dev --step 0 --arm base   # logs to W&B
+# provision + setup (idempotent; state lives on /workspace)
+sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y
 
-# step 2: sampling manifest, pilot, then defence and control with the budget-derived iteration count
-scripts/pod.sh env "cd ~/auditbench-uplift && python scripts/make_sampling_manifest.py --config configs/training/pilot.yaml --materialise"
-scripts/pod.sh env "cd ~/auditbench-uplift && source /workspace/auditbench/harbor-train/skyrl-train/.venv/bin/activate && bash scripts/launch_training.sh configs/training/pilot.yaml /workspace/auditbench"
-scripts/pod.sh env "cd ~/auditbench-uplift && python scripts/spend_guard.py iteration-budget --ledger /workspace/auditbench/spend.json"   # -> T_max
-python scripts/select_checkpoint.py --arm defence     # eligibility, D, tie rules, manipulation check
-python scripts/watchdog.py --arm defence --stop-file /workspace/auditbench/STOP --stop-cmd "scripts/pod.sh ssh pkill -f main_harbor"
+# phases, each self-stopping the pod at the end (sky start auditbench before the next one)
+sky exec -c auditbench --env-file .env -- bash scripts/phase.sh smoke
+sky exec -c auditbench --env-file .env -- bash scripts/phase.sh baseline
+sky exec -c auditbench --env-file .env -- bash scripts/phase.sh pilot      # writes /workspace/auditbench/reports/iteration_budget.json
+sky exec -c auditbench --env-file .env -- bash scripts/phase.sh defence
+sky exec -c auditbench --env-file .env -- bash scripts/phase.sh control
+
+# results back, selection and export (local)
+rsync -az "$(sky status --ip auditbench)":/workspace/auditbench/reports/ reports/runs/
+python scripts/select_checkpoint.py --arm defence
 python scripts/export_stage2.py --checkpoint defence-selected-S=/workspace/auditbench/runs/defence-seed1/exports/global_step_10
+sky down auditbench   # when finished; the volume persists
 ```
 
 W&B: `WANDB_PROJECT` (default `auditbench-uplift`) receives trainer metrics (`trainer.logger=wandb`),

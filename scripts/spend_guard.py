@@ -9,11 +9,12 @@ the main arms from the pilot's measured cost per iteration:
 
 Usage on the GPU node (background):
     python scripts/spend_guard.py watch --ledger /workspace/auditbench/spend.json --phase pilot --rate 18.36 \
-        --stop-file /workspace/auditbench/STOP --stop-cmd "pkill -f main_harbor"
+        --stop-file /workspace/auditbench/STOP --stop-cmd "pkill -f main_harbor" --stop-pod self
     python scripts/spend_guard.py iteration-budget --ledger /workspace/auditbench/spend.json --pilot-iterations 10
 """
 import argparse
 import json
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -57,9 +58,23 @@ def watch(args) -> None:
             Path(args.stop_file).write_text("; ".join(over) + "\n")
             if args.stop_cmd:
                 subprocess.run(args.stop_cmd, shell=True, check=False)
+            if args.stop_pod:
+                _stop_pod(os.environ.get("RUNPOD_POD_ID", "") if args.stop_pod == "self" else args.stop_pod)
             print("STOP:", over)
             return
         time.sleep(args.poll_sec)
+
+
+def _stop_pod(pod_id: str) -> None:
+    """Stop the RunPod pod itself (RUNPOD_API_KEY in the environment); last line of defence against idle billing."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("runpod_api", Path(__file__).with_name("runpod_api.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    if not pod_id:
+        print("stop pod: no pod id available")
+        return
+    print("stop pod:", mod.stop(pod_id))
 
 
 def iteration_budget(args) -> None:
@@ -86,6 +101,7 @@ def main() -> None:
     w.add_argument("--rate", type=float, required=True, help="node $/hour as billed")
     w.add_argument("--stop-file", required=True)
     w.add_argument("--stop-cmd", default=None)
+    w.add_argument("--stop-pod", default=None, help="RunPod pod id, or 'self' to read RUNPOD_POD_ID, to stop when a cap trips (needs RUNPOD_API_KEY)")
     w.add_argument("--poll-sec", type=int, default=60)
     w.set_defaults(fn=watch)
     b = sub.add_parser("iteration-budget")

@@ -1,0 +1,37 @@
+# SkyPilot cluster for all GPU phases on RunPod Secure Cloud 4xH200 (PLAN.md §8.1, amended 2026-10-05).
+#   sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y   # provision + setup (idempotent)
+#   sky exec   -c auditbench --env-file .env -- bash scripts/phase.sh <phase>          # run one phase (see scripts/phase.sh)
+#   sky stop   auditbench   /   sky down auditbench                                    # stop (keeps volume) / delete
+# State persists on the RunPod network volume `auditbench-uplift-durable` (adopted with `sky volumes apply --use-existing`).
+# Sandboxes are Modal (MODAL_TOKEN_* in .env); the node runs vLLM, the Harbor agent loop and the trainer.
+name: auditbench
+
+resources:
+  infra: runpod/fr/EU-FR-1
+  instance_type: 4x_H200-SXM_SECURE     # $18.36/h list price
+  disk_size: 200                        # container disk; durable state lives on the volume
+  ports: [8000]                         # vLLM endpoint (loopback use only; exposed for debugging)
+  image_id: docker:runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+
+volumes:
+  /workspace: auditbench-uplift-durable
+
+workdir: .
+
+envs:
+  WANDB_API_KEY: ""
+  WANDB_ENTITY: ""
+  WANDB_PROJECT: auditbench-uplift
+  HF_TOKEN: ""
+  MODAL_TOKEN_ID: ""
+  MODAL_TOKEN_SECRET: ""
+  RUNPOD_API_KEY: ""                    # spend guard self-stop (RUNPOD_POD_ID is set by RunPod inside the pod)
+  AUDITBENCH_SANDBOX: modal
+
+setup: |
+  set -euo pipefail
+  [ -n "$WANDB_API_KEY" ] || { echo "WANDB_API_KEY required"; exit 1; }
+  bash scripts/node_bootstrap.sh
+
+run: |
+  echo "cluster ready; run phases with: sky exec -c auditbench --env-file .env -- bash scripts/phase.sh <phase>"

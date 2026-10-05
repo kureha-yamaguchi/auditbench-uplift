@@ -11,20 +11,23 @@
   "host_ram_gb": 1007,
   "container_disk_gb": 300,
   "usd_per_hour": 18.36,
-  "created_at": "2026-10-04T08:38:00Z"
+  "created_at": "2026-10-04T08:38:00Z",
+  "terminated": "2026-10-05: pod no longer listed on the account after the 2026-10-04 stop (RunPod removed it); 9.5 h uptime, ~$175"
  },
  "network_volume": {
   "id": "zues5s7zwd",
   "name": "auditbench-uplift-durable",
   "size_gb": 300,
   "type": "HIGH_PERFORMANCE",
-  "mount": "/workspace"
+  "mount": "/workspace",
+  "state": "persists with harbor-train venv, Qwen3-8B cache, repo; attach to the next pod at /workspace"
  },
  "cap_usd_total": 1500,
  "notes": [
   "2026-10-04: pod cannot run nested containers (no user namespaces, no mount capability); Docker/Podman sandboxes on the node are impossible.",
   "2026-10-04: W&B serverless sandboxes return 'entity not found' for this account; backend unavailable.",
   "2026-10-04: ~7.3 h of idle pod time (~$134) accrued between operator turns before bootstrap started; pod to be stopped whenever no job is running.",
-  "sandbox backend decision pending: Modal tokens requested from the user; fallback is a chroot environment with no network isolation (recorded deviation)."
+  "sandbox backend decision pending: Modal tokens requested from the user; fallback is a chroot environment with no network isolation (recorded deviation).",
+  "2026-10-05: RUNPOD_API_KEY added (same account as the plugin login); used only for automatic pod stop/start via scripts/runpod_api.py"
  ]
 }

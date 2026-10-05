@@ -15,4 +15,4 @@ Generated artefacts and checks run on 2026-10-03 (laptop, no sandbox provider, n
 
 Not run (requires the GPU pod): Docker isolation smoke, Qwen smoke, baselines, pilot, training, control baseline.
 
-Infrastructure amendment 2026-10-04: RunPod via MCP plugin + SSH (`scripts/pod.sh`), Docker sandboxes on the node, no SkyPilot, no RunPod API key, $1,500 total cap (`scripts/spend_guard.py`).
+Infrastructure amendment 2026-10-05: SkyPilot + RunPod API key (`configs/skypilot/runpod-4xh200.yaml`, `scripts/phase.sh`), Modal sandboxes required, network volume adopted into SkyPilot, $1,500 total cap with per-phase pod self-stop. Spend so far: ~$175 of pod time on 2026-10-04 (bootstrap + idle), state preserved on the volume.

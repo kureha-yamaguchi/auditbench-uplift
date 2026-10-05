@@ -12,10 +12,13 @@ Implementing or running those Stage-2 evaluations is outside this document's sco
 
 **Status: reviewed research design, 2026-10-03; Stage-1 tooling implemented 2026-10-03/04.**
 
-**Amendment 2026-10-04 (infrastructure).** Provisioning uses the RunPod account connected through the
-RunPod MCP plugin (browser OAuth) plus SSH to the pod, not a RunPod API key and not SkyPilot. Modal
-tokens are not available; sandboxes run with Harbor's Docker environment on the GPU node by default
-(`AUDITBENCH_SANDBOX=docker`), switchable to Modal if tokens are added. A user-set hard cap of
+**Amendment 2026-10-04/05 (infrastructure).** Provisioning uses SkyPilot with the RunPod API key
+(`sky launch` on `configs/skypilot/runpod-4xh200.yaml`), as originally planned; an interim SSH-driven route
+was retired on 2026-10-05. The node attaches the RunPod network volume `auditbench-uplift-durable`
+(adopted into SkyPilot with `sky volumes apply --use-existing`), which holds harbor-train, the venv, the
+model cache and run state. RunPod pods cannot run nested containers, so sandboxes must be Modal
+(`AUDITBENCH_SANDBOX=modal`); the RunPod MCP plugin remains for billing and inspection. Every phase
+(`scripts/phase.sh`) runs under the spend guard and stops the pod when it ends. A user-set hard cap of
 **$1,500 total** replaces the open-ended budget; `scripts/spend_guard.py` meters it and derives the
 main-run iteration count from pilot timing. Affected text below is marked *(amended)*.
 This review inspected the local `../auditlogsbench` checkout at commit
@@ -43,7 +46,7 @@ content with generic terminal training.
 | Context | Pilot 32k with bounded tool output first; test 64k/YaRN only if needed. Freeze one contract across baseline, training, and model comparisons. |
 | Selection | Balanced dev detection/clean-negative score with false-alert and validity constraints; step 0 is eligible. Preserve the actual trained endpoint as well. |
 | Control matching | Same declared training iterations and agent budgets; measure actual updates, tokens, rollouts, and time. Equal task counts or steps do not imply equal compute. |
-| Infrastructure | *(amended)* RunPod 4×H200 pod created through the RunPod MCP plugin and driven over SSH; Docker sandboxes on the node (Modal optional); W&B; RunPod network volume plus independent backup. Quotas, memory feasibility, and compatibility must be measured. |
+| Infrastructure | *(amended)* RunPod 4×H200 via SkyPilot with the API key; Modal sandboxes (nested containers are impossible on RunPod pods); W&B; RunPod network volume plus independent backup. Quotas, memory feasibility, and compatibility must be measured. |
 
 Whole-file classification and terminal-mediated log access change the original protocol. Call
 this adaptation **AuditBench-Agent** and distinguish its scores from paper-reproduction scores.
@@ -607,11 +610,11 @@ estimates training-seed variation, not variation across alternative splits.
 
 ### 8.1 Provisioning and secrets
 
-*(amended)* RunPod Secure Cloud 4×H200 SXM pod created with the RunPod MCP plugin (account access via
-browser OAuth; no API key stored locally), SSH public key injected at creation, and all setup, runs,
-and teardown driven over SSH with `scripts/pod.sh` and `scripts/pod_bootstrap.sh`. Verify region/volume
-compatibility, host RAM, interconnect, availability, and actual Secure Cloud selection. Attach a RunPod
-network volume at `/workspace`; a 500-GB root disk is not durable checkpoint storage.
+*(amended)* RunPod Secure Cloud 4×H200 SXM via SkyPilot (`configs/skypilot/runpod-4xh200.yaml`, API key in
+`.env` and `~/.runpod/config.toml`); setup is `scripts/node_bootstrap.sh`, phases run with `sky exec` through
+`scripts/phase.sh`, and the pod stops itself at the end of every phase. Verify region/volume compatibility, host
+RAM, interconnect, availability, and actual Secure Cloud selection. The RunPod network volume is attached at
+`/workspace`; the container disk is not durable checkpoint storage.
 
 `.env.template` includes names/comments only:
 
@@ -624,8 +627,8 @@ WANDB_PROJECT=auditbench-uplift
 HF_TOKEN=
 ```
 
-Secrets reach the pod only as exported variables inside the SSH session (`scripts/pod.sh env`);
-git-ignore `.env`; prevent values entering configs/logs/sandboxes.
+Secrets reach the node only through SkyPilot's `--env-file .env` injection; git-ignore `.env`; prevent
+values entering configs/logs/sandboxes.
 Stage 1 needs no Stage-2 judge key. W&B holds metrics/artifact references; durable records remain
 authoritative when telemetry is unavailable. The trainer enforces stops/saves; a watcher is a watchdog.
 
@@ -639,8 +642,8 @@ about **$0.1659/hour for one physical core + one GiB**, before multipliers/other
 uses the greater of requested and actual resources. Listed Starter container concurrency is 100;
 256 is not a safe default. See [Modal pricing](https://modal.com/pricing) and
 [sandbox resource billing](https://modal.com/docs/guide/sandbox-resources).
-*(amended)* With Docker sandboxes on the node, `C_sandbox` is zero and sandbox time is paid as node
-time; concurrency is bounded by node CPU/RAM (start at 16–32) and the pod's disk.
+*(amended)* Sandboxes are Modal; `C_sandbox` applies as listed. Idle node time proved to be the dominant
+leak (≈$175 on 2026-10-04 before any job ran), hence the per-phase self-stop.
 
 ```text
 R_baseline = 5 × (N_train_canonical + N_dev + N_control_baseline)

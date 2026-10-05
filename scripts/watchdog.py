@@ -4,7 +4,7 @@
 The trainer owns saves and the hard iteration cap (the sampling manifest fixes the iteration count).
 This process watches the per-step dev evaluations produced by score_job.py and, once four consecutive
 scheduled evaluations show no eligible improvement >= 0.01 in D, writes a STOP file and optionally
-runs a stop command (e.g. `scripts/pod.sh ssh pkill -f main_harbor`). It never deletes anything.
+runs a stop command (e.g. `sky exec -c auditbench -- pkill -f main_harbor`). It never deletes anything.
 """
 import argparse
 import subprocess
