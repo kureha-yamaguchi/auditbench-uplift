@@ -18,3 +18,4 @@ wandb/
 !grader/fixtures/*.log
 .ruff_cache/
 .DS_Store
+*/DS_Store
