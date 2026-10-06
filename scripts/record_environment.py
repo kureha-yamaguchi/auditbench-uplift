@@ -32,7 +32,7 @@ def main() -> None:
         "docker": sh("docker --version"),
         "nvidia_smi": sh("nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader"),
         "cuda": sh("nvcc --version | tail -1"),
-        "harbor_train_commit": sh("git -C ~/harbor-train rev-parse HEAD"),
+        "harbor_train_commit": sh("git -C /workspace/auditbench/harbor-train rev-parse HEAD"),
         "repo_commit": sh("git rev-parse HEAD"),
         "repo_dirty": bool(sh("git status --porcelain")),
     }

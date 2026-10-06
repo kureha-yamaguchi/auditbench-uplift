@@ -1,7 +1,7 @@
 # @package harbor_trial_config
 # Harbor TrialConfig template for harbor-train / SkyRL (overrides examples/harbor/harbor_trial_config/default.yaml).
 # SkyRL injects task.path, agent.model_name, agent.kwargs.api_base and session_id per trial.
-trials_dir: ~/runs/${oc.env:RUN_NAME}/trials
+trials_dir: ${oc.env:AUDITBENCH_DURABLE,/workspace/auditbench}/runs/${oc.env:RUN_NAME}/trials   # Harbor does not expand ~
 timeout_multiplier: 1.0
 agent:
   name: terminus-2
@@ -26,7 +26,7 @@ agent:
       min_p: 0.0
       max_tokens: 8192
 environment:
-  type: ${oc.env:AUDITBENCH_SANDBOX,docker}   # docker = sandboxes on the GPU node; modal once MODAL_TOKEN_* exist
+  type: ${oc.env:AUDITBENCH_SANDBOX,modal}    # RunPod pods cannot run nested containers
   override_cpus: 1
   override_memory_mb: 1024
   override_storage_mb: 1024
@@ -35,6 +35,8 @@ environment:
   # modal only: kwargs: {sandbox_timeout_secs: 1800}
 verifier:
   disable: false
+  env:
+    AUDITBENCH_REWARD: ${oc.env:AUDITBENCH_REWARD,strict}   # read by grader/verify.py inside the verifier sandbox
   override_timeout_sec: 300
 artifacts:
   - /app/findings.json

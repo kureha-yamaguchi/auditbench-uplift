@@ -12,6 +12,7 @@ DURABLE=/workspace/auditbench
 REPO="$DURABLE/auditbench-uplift"
 RATE=${POD_RATE_USD_PER_HOUR:-18.36}
 cd "$REPO"
+mkdir -p "$DURABLE/reports"
 source "$DURABLE/harbor-train/skyrl-train/.venv/bin/activate"
 export HF_HOME="$DURABLE/hf" AUDITBENCH_SANDBOX=${AUDITBENCH_SANDBOX:-modal}
 
@@ -28,7 +29,7 @@ finish() {
 trap finish EXIT
 
 vllm_up() {
-  pgrep -f "vllm serve" >/dev/null && return
+  pgrep -f "vllm.entrypoints.openai.api_server" >/dev/null && return
   nohup python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
     --served-model-name Qwen3-8B --tensor-parallel-size 1 --data-parallel-size 4 --max-model-len 32768 \
     --chat-template "$DURABLE/harbor-train/skyrl-train/skyrl_train/utils/templates/qwen3_acc_thinking.jinja2" \
@@ -52,7 +53,7 @@ case "$PHASE" in
     python scripts/score_job.py trajectories/baseline.jsonl --split dev --step 0 --arm base
     python scripts/score_job.py trajectories/baseline.jsonl --split train --step 0 --arm base ;;
   pilot|defence|control)
-    pkill -f "vllm serve" || true   # the trainer owns the GPUs
+    pkill -f "vllm.entrypoints.openai.api_server" || true   # the trainer owns the GPUs
     python scripts/make_sampling_manifest.py --config "configs/training/$PHASE.yaml" --materialise
     bash scripts/launch_training.sh "configs/training/$PHASE.yaml" "$DURABLE"
     [ "$PHASE" = pilot ] && python scripts/spend_guard.py iteration-budget --ledger "$DURABLE/spend.json" | tee "$DURABLE/reports/iteration_budget.json"

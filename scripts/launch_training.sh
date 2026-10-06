@@ -10,15 +10,22 @@ RUN_NAME=$(y "['run_name']"); ITERS=$(y "['iterations']"); PROMPTS=$(y "['prompt
 TRAIN_DIR=$(eval echo "$(y "['data']['train_dir']")"); DEV_DIR=$(eval echo "$(y "['data']['dev_dir']")")
 LR=$(y "['optimizer']['lr']"); MAXLEN=$(y "['model']['max_model_len']"); EVAL_INT=$(y "['eval_interval']"); CKPT_INT=$(y "['ckpt_interval']")
 REWARD_MODE=$(y "['reward_mode']"); SEED=$(y "['seed']")
-N_ENTRIES=$(find "$TRAIN_DIR" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
+WD=$(y "['optimizer']['weight_decay']"); BETAS=$(y "['optimizer']['betas']"); GRAD_CLIP=$(y "['optimizer']['grad_clip']")
+SCHED=$(y "['optimizer']['scheduler']"); CLIP_LO=$(y "['algorithm']['eps_clip_low']"); CLIP_HI=$(y "['algorithm']['eps_clip_high']")
+MODEL_REV=$(y "['model']['revision']")
+# skyrl_train has no model-revision option: pass the pinned local snapshot so HF `main` is never loaded.
+MODEL_PATH=$(python -c "from huggingface_hub import snapshot_download as s; print(s('$(y "['model']['path']")', revision='$MODEL_REV', local_files_only=True))")
+# HarborTaskDataset silently drops entries without instruction.md, so count only loadable tasks.
+N_ENTRIES=$(find -L "$TRAIN_DIR" -mindepth 2 -maxdepth 2 -name instruction.md | wc -l | tr -d ' ')
 [ "$N_ENTRIES" -eq $((ITERS * PROMPTS)) ] || { echo "train dir has $N_ENTRIES entries, expected $((ITERS*PROMPTS))"; exit 1; }
 RUN_ROOT="$DURABLE/runs/$RUN_NAME"; [ -e "$RUN_ROOT/ckpts" ] && { echo "refusing to reuse $RUN_ROOT (no accidental resume)"; exit 1; }
 mkdir -p "$RUN_ROOT"; cp "$CFG" "$RUN_ROOT/run_config.yaml"
-export AUDITBENCH_REWARD="$REWARD_MODE" RUN_NAME
+# AUDITBENCH_REWARD reaches the separate verifier sandbox via verifier.env in the trial config.
+export AUDITBENCH_REWARD="$REWARD_MODE" RUN_NAME AUDITBENCH_DURABLE="$DURABLE"
 cd "${HARBOR_TRAIN_DIR:-/workspace/auditbench/harbor-train}/skyrl-train"
 python -m examples.harbor.entrypoints.main_harbor \
   data.train_data="['$TRAIN_DIR']" data.val_data="['$DEV_DIR']" \
-  trainer.policy.model.path=Qwen/Qwen3-8B generator.served_model_name=Qwen3-8B \
+  trainer.policy.model.path="$MODEL_PATH" generator.served_model_name=Qwen3-8B \
   hydra.searchpath="['file://examples/harbor','file://$HOME/auditbench-uplift/configs/harbor']" \
   +harbor_trial_config=auditbench_trial_config \
   trainer.export_path="$RUN_ROOT/exports" trainer.ckpt_path="$RUN_ROOT/ckpts" trainer.log_path="$RUN_ROOT/logs" \
@@ -33,10 +40,12 @@ python -m examples.harbor.entrypoints.main_harbor \
   trainer.update_epochs_per_batch=1 trainer.micro_forward_batch_size_per_gpu=1 trainer.micro_train_batch_size_per_gpu=1 \
   trainer.eval_before_train=true trainer.eval_interval=$EVAL_INT trainer.eval_batch_size=128 \
   trainer.ckpt_interval=$CKPT_INT trainer.hf_save_interval=$CKPT_INT trainer.algorithm.max_seq_len=$MAXLEN \
-  trainer.policy.optimizer_config.lr=$LR trainer.seed=$SEED \
+  trainer.policy.optimizer_config.lr=$LR trainer.policy.optimizer_config.weight_decay=$WD \
+  trainer.policy.optimizer_config.adam_betas="$BETAS" trainer.policy.optimizer_config.max_grad_norm=$GRAD_CLIP \
+  trainer.policy.optimizer_config.scheduler=$SCHED trainer.policy.optimizer_config.num_warmup_steps=0 \
+  trainer.algorithm.eps_clip_low=$CLIP_LO trainer.algorithm.eps_clip_high=$CLIP_HI trainer.seed=$SEED \
   generator.n_samples_per_prompt=$SAMPLES generator.eval_n_samples_per_prompt=5 \
   generator.apply_overlong_filtering=true generator.gpu_memory_utilization=0.8 \
-  generator.sampling_params.temperature=1.0 generator.sampling_params.top_p=1.0 generator.sampling_params.top_k=-1 \
   trainer.logger=wandb trainer.project_name="${WANDB_PROJECT:-auditbench-uplift}" trainer.run_name="$RUN_NAME" \
   trainer.resume_mode=none \
   generator.backend=vllm generator.run_engines_locally=true generator.weight_sync_backend=nccl generator.async_engine=true \
