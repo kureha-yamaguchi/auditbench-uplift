@@ -1,0 +1,125 @@
+diff --git a/skyrl-train/examples/harbor/harbor_generator.py b/skyrl-train/examples/harbor/harbor_generator.py
+index d135301..17f84de 100644
+--- a/skyrl-train/examples/harbor/harbor_generator.py
++++ b/skyrl-train/examples/harbor/harbor_generator.py
+@@ -154,9 +154,12 @@ class HarborGenerator(GeneratorInterface):
+             rollout_metrics: Dict of rollout metrics for logging.
+         """
+         # Count failures by type before grouping overwrites stop_reason.
++        # AuditBench patch: agent timeouts are policy outcomes (reward 0) and no longer mask the group;
++        # "agent_timeout" trajectories train on their transcript, "agent_timeout_excluded" ones are
++        # loss-masked individually. Only infrastructure errors mask the whole prompt group.
+         num_timeout_trajectories = 0
++        num_timeout_excluded_trajectories = 0
+         num_error_trajectories = 0
+-        timeout_instance_ids = set()
+         error_instance_ids = set()
+         all_instance_ids = set()
+         for output in all_outputs:
+@@ -164,12 +167,14 @@ class HarborGenerator(GeneratorInterface):
+             all_instance_ids.add(cur_instance_id)
+             if output.stop_reason == "agent_timeout":
+                 num_timeout_trajectories += 1
+-                timeout_instance_ids.add(cur_instance_id)
++            elif output.stop_reason == "agent_timeout_excluded":
++                num_timeout_trajectories += 1
++                num_timeout_excluded_trajectories += 1
+             elif output.stop_reason == "error":
+                 num_error_trajectories += 1
+                 error_instance_ids.add(cur_instance_id)
+ 
+-        masked_instance_ids = timeout_instance_ids | error_instance_ids
++        masked_instance_ids = error_instance_ids
+ 
+         # Zero-out all outputs belonging to any timeout or error instance so we skip training on them.
+         successful_outputs: List[HarborAgentOutput] = []
+@@ -180,7 +185,7 @@ class HarborGenerator(GeneratorInterface):
+                 output.loss_mask = [0]
+                 output.prompt_ids = [0]
+                 output.reward = 0
+-            else:
++            elif output.stop_reason != "agent_timeout_excluded":
+                 successful_outputs.append(output)
+ 
+         # Rollout metrics for successful outputs.
+@@ -203,12 +208,13 @@ class HarborGenerator(GeneratorInterface):
+ 
+         # Failure metrics: timeout vs unknown error trajectories, and masked instances.
+         rollout_metrics["generate/num_timeout_trajectories"] = num_timeout_trajectories
++        rollout_metrics["generate/num_timeout_excluded_trajectories"] = num_timeout_excluded_trajectories
+         rollout_metrics["generate/num_error_trajectories"] = num_error_trajectories
+         rollout_metrics["generate/num_masked_instances"] = len(masked_instance_ids)
+ 
+         logger.info(
+             f"\n# of masked instances: {len(masked_instance_ids)} / {len(all_instance_ids)}\n"
+-            f"# of timeout trajectories: {num_timeout_trajectories}\n"
++            f"# of timeout trajectories: {num_timeout_trajectories} ({num_timeout_excluded_trajectories} loss-masked)\n"
+             f"# of error trajectories: {num_error_trajectories}"
+         )
+ 
+@@ -239,7 +245,7 @@ class HarborGenerator(GeneratorInterface):
+                 config["task"] = {"path": prompt}
+                 config["agent"]["kwargs"]["session_id"] = uuid4().hex
+                 trial_config = TrialConfig.model_validate(config)
+-                trial = Trial(trial_config)
++                trial = await Trial.create(trial_config)
+ 
+                 async with self._rate_limiter:
+                     results = await trial.run()
+@@ -251,9 +257,10 @@ class HarborGenerator(GeneratorInterface):
+ 
+                 # --- Determine reward ---
+                 if is_agent_timeout_error:
+-                    # AgentTimeoutError: not successful, no retry, loss-masked
+-                    logger.debug(f"{prefix} hit AgentTimeoutError (no retry). Results: {results}")
+-                    break
++                    # AuditBench patch: AgentTimeoutError is a policy outcome. No retry; reward 0; train on
++                    # the saved transcript when it is usable (checked below), else mask this trajectory only.
++                    logger.debug(f"{prefix} hit AgentTimeoutError (no retry, reward=0). Results: {results}")
++                    reward = 0
+                 elif is_context_length_error:
+                     # ContextLengthExceededError: always train with reward=0.
+                     logger.debug(
+@@ -268,13 +275,18 @@ class HarborGenerator(GeneratorInterface):
+                     reward = results.verifier_result.rewards["reward"]
+ 
+                 # --- Extract chat history and check for success ---
+-                chat_history = results.agent_result.metadata["all_messages"]
+-                summarization_count = results.agent_result.metadata["summarization_count"]
+-                num_turns = results.agent_result.metadata["n_episodes"]
++                metadata = (results.agent_result.metadata if results.agent_result else None) or {}
++                if is_agent_timeout_error and "all_messages" not in metadata:
++                    break
++                chat_history = metadata["all_messages"]
++                summarization_count = metadata["summarization_count"]
++                num_turns = metadata["n_episodes"]
+                 if len(chat_history) > 1 and chat_history[0]["role"] == "user":
+                     successful = True
+                     logger.debug(f"{prefix} successful: reward={reward}. Results: {results}")
+                     break
++                elif is_agent_timeout_error:
++                    break
+                 else:
+                     logger.warning(
+                         f"{prefix} failed: Did not return a chat history with a user message. chat_history: {chat_history}\nResults: {results}"
+@@ -284,8 +296,9 @@ class HarborGenerator(GeneratorInterface):
+                 continue
+ 
+         if not successful:
+-            # We make loss mask 0 so it does not contribute to model updates
+-            stop_reason = "agent_timeout" if is_agent_timeout_error else "error"
++            # We make loss mask 0 so it does not contribute to model updates. AuditBench patch: a timeout
++            # without a usable transcript ("agent_timeout_excluded") masks only this trajectory.
++            stop_reason = "agent_timeout_excluded" if is_agent_timeout_error else "error"
+             error_message = f"Trajectory {trajectory_id} failed (stop_reason={stop_reason}), will set loss mask to [0]."
+             if stop_reason == "error":
+                 error_message += f" Results: {results}"
+@@ -321,6 +334,8 @@ class HarborGenerator(GeneratorInterface):
+         max_response_tokens = max(0, self.max_seq_len - initial_prompt_length)
+         if is_context_length_error or len(response_ids) > max_response_tokens:
+             stop_reason = "context_length"
++        elif is_agent_timeout_error:
++            stop_reason = "agent_timeout"
+         else:
+             stop_reason = "complete"
+ 

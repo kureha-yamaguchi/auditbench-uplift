@@ -101,8 +101,14 @@ per-evaluation dev scores and tables from `score_job.py`, and the data-manifest 
 
 ## Known integration gaps (verify on the pilot)
 
+- harbor-train 9310ef6 targets an older Harbor; our tasks need Harbor 0.23 (no-network, separate verifier, agent user).
+  `patches/harbor-train-9310ef6.patch` (applied by `node_bootstrap.sh`, tested in `tests/test_harbor_train_patch.py`) switches
+  to `await Trial.create(...)` and makes agent timeouts reward-0 policy outcomes trained on the saved transcript (per-trajectory
+  mask if none); only infrastructure errors mask the whole prompt group.
+- harbor-train re-tokenises the chat transcript (no rollout logprobs); exact token reconstruction must be measured in the pilot.
+- `max_tokens=8192` per request: if vLLM rejects prompt + 8,192 > 32,768 instead of clipping, usable context is ~24.5k (smoke).
 - Terminus-2 caps each tool output at 10,000 bytes (not a token count); the realised token cap must be measured.
 - Token ids / logprobs require `collect_rollout_details=true` (set in the configs); the trajectory indexer records their absence as a gap.
 - harbor-train's generator masks a whole prompt-group on any infrastructure failure; drop/recollect accounting must be read from its metrics.
 - Early stopping is a watchdog, not a trainer hook; the hard iteration cap is enforced by the sampling manifest length with `epochs=1`.
-- `generator.sampling_params.*` override names must be confirmed against the pinned harbor-train commit before the pilot.
+- Sampling settings for Harbor rollouts live in the trial config's `agent.kwargs` (Terminus-2/LiteLLM), not `generator.sampling_params`.

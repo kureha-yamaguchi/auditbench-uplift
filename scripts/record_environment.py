@@ -33,6 +33,8 @@ def main() -> None:
         "nvidia_smi": sh("nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader"),
         "cuda": sh("nvcc --version | tail -1"),
         "harbor_train_commit": sh("git -C /workspace/auditbench/harbor-train rev-parse HEAD"),
+        "harbor_train_local_diff_sha256": sh("git -C /workspace/auditbench/harbor-train diff | sha256sum | cut -d' ' -f1"),
+        "harbor_train_patch_sha256": sh("sha256sum patches/harbor-train-9310ef6.patch | cut -d' ' -f1"),
         "repo_commit": sh("git rev-parse HEAD"),
         "repo_dirty": bool(sh("git status --porcelain")),
     }

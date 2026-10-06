@@ -21,7 +21,9 @@ command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
 if [ ! -d "$HT" ]; then git clone https://github.com/fleet-ai/harbor-train.git "$HT"; fi
-git -C "$HT" fetch -q && git -C "$HT" checkout -q "$HARBOR_TRAIN_REF"
+# Pinned commit plus our local patch only (Harbor 0.23 trial API, PLAN.md §6.4 timeout policy); -f drops stale edits.
+git -C "$HT" fetch -q && git -C "$HT" checkout -q -f "$HARBOR_TRAIN_REF"
+git -C "$HT" apply "$DURABLE/auditbench-uplift/patches/harbor-train-9310ef6.patch"
 cd "$HT/skyrl-train"
 [ -d .venv ] || uv venv --python 3.12 --seed
 source .venv/bin/activate
