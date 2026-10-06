@@ -43,6 +43,20 @@ case "$PHASE" in
     harbor run -p tasks/dev --n-tasks 2 -a oracle --env "$AUDITBENCH_SANDBOX" --job-name smoke-oracle -n 2 -o "$DURABLE/jobs"
     python scripts/index_trajectories.py "$DURABLE/jobs/smoke-oracle" --name smoke-oracle --split dev
     vllm_up
+    # Does vLLM clip or reject prompt + max_tokens > max-model-len? Decides whether usable context is 32k or ~24.5k.
+    python - <<'PY' | tee "$DURABLE/reports/smoke_context_probe.json"
+import json, urllib.request, urllib.error
+def ask(n_words):
+    body = {"model": "Qwen3-8B", "max_tokens": 8192, "messages": [{"role": "user", "content": "word " * n_words + "\nReply OK."}]}
+    req = urllib.request.Request("http://127.0.0.1:8000/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
+    try:
+        r = json.load(urllib.request.urlopen(req, timeout=600))
+        return {"ok": True, "prompt_tokens": r["usage"]["prompt_tokens"], "completion_tokens": r["usage"]["completion_tokens"],
+                "finish_reason": r["choices"][0]["finish_reason"]}
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "status": e.code, "error": e.read().decode()[:500]}
+print(json.dumps({"max_model_len": 32768, "max_tokens": 8192, "prompt_20k": ask(20000), "prompt_28k": ask(28000)}, indent=1))
+PY
     AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs" \
       --dataset-path tasks/dev --n-tasks 4 2>/dev/null || AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs"
     python scripts/index_trajectories.py "$DURABLE/jobs/smoke-qwen" --name smoke-qwen --split dev ;;
