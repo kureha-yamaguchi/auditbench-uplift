@@ -10,7 +10,7 @@ and online GRPO with harbor-train/SkyRL, tracked in Weights & Biases.
 
 | Gate | State | Evidence |
 |---|---|---|
-| A: data | **done, pending human label review** | `reports/gate_a_data.md`, `splits/README.md`, `manifests/` |
+| A: data | **done**; labels signed off 2026-10-06 (blanket accept) | `reports/gate_a_data.md`, `splits/README.md`, `manifests/` |
 | B: environment | **done locally**; sandbox checks pending | `reports/gate_b_checks.json` (445/445 tasks: schema ok, no leakage, oracle passes), `reports/compat_differential.json` (4/4 upstream matches), 53 tests |
 | C: step 1 baseline | tooling ready, **not run** (needs the GPU pod) | `scripts/run_baseline.sh`, `configs/harbor/baseline_job.yaml` |
 | D: pilot | tooling ready, **not run** | `configs/training/pilot.yaml`, `scripts/launch_training.sh` |

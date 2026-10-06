@@ -1,0 +1,14 @@
+{
+ "date": "2026-10-06",
+ "reviewer": "investigator",
+ "mode": "blanket accept",
+ "labels_sha256": {
+  "train": "e176071ef156ffbf667d9a2b0e64774637edba444bea10fac872304baf71001d",
+  "dev": "024ae7d9ee349b1f4977064d93eb57c91599f4ba7b734e2f6592df4b06b4e83a"
+ },
+ "negative_window_sample": "accepted without a drawn sample",
+ "decisions": {
+  "weak_optc_campaign_day_edges": "not used for grouping (current default)",
+  "thin_exfiltration_train_cell": "kept as is (2 positive train groups); reported as a limitation"
+ }
+}

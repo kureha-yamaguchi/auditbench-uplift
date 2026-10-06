@@ -13,5 +13,8 @@ Status: generated and checked locally on the AuditBench checkout `369ad441f287`;
 - OpTC LM uses the unique-host convention (records merged by external host); persistence records with several technique names
   become one target unit per technique sharing the candidate timestamps.
 
-Open items before freezing (PREREG.md): human review of `manifests/labels/{train,dev}.jsonl` evidence lines and of the
+Resolved 2026-10-06 (`manifests/label_review.meta.json`): investigator accepted all train/dev targets without an itemised
+review or drawn negative sample; weak edges stay unused; the exfiltration train cell stays as is (limitation).
+
+Original open items: human review of `manifests/labels/{train,dev}.jsonl` evidence lines and of the
 negative attack-file windows sample; decision on OpTC campaign-day (weak) edges; decision on the thin exfiltration train cell.

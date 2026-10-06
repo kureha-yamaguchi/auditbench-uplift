@@ -12,7 +12,7 @@ Status: **not frozen**. Pilot-dependent fields are marked `TBD(pilot)`. See PLAN
 - AuditBench commit `369ad441f2876245d0db19990c77ccbcb74a0a3a`; annotation hashes in `manifests/versions.json`.
 - Model `Qwen/Qwen3-8B` revision `b968826d9c46dd6066d109eabc6255188de91218`; inference contract `configs/inference_contract.yaml`.
 - Grouping/split: seed 20261003, strong edges only, 50/10/40 ladder with the dev feasibility constraint (realised 18/7/15 groups).
-- Label manifest: `manifests/labels/{train,dev}.jsonl` (human review sign-off: `TBD`), sealed test.
+- Label manifest: `manifests/labels/{train,dev}.jsonl` (sign-off 2026-10-06: blanket accept by the investigator, no itemised evidence review; `manifests/label_review.jsonl`, `label_review.meta.json`), sealed test.
 - Grader `auditbench-agent-grader-v1`: strict reward (PLAN.md §5.1); dense contingency only if the pilot sparse-reward rule fires.
 - Sampler: hierarchy in `training/sampler.py`; manifests `manifests/sampling/*.jsonl`.
 
@@ -28,7 +28,7 @@ control trained to `T`, keep `control-S` and `control-T`.
 
 ## Control pool
 `open-thoughts/OpenThoughts-TB-dev@0d54f719`; rubric `manifests/control_rubric.md`; screening `manifests/control_review.jsonl`
-(reviewer decisions `TBD`); deduplicate families, reserve control dev, match declared iterations and budgets.
+(reviewer decisions 2026-10-06: screen accepted, 62 include / 8 exclude); deduplicate families, reserve control dev, match declared iterations and budgets.
 
 ## Pilot decisions to record here
 Reward variance rule outcome; 32k vs 64k; realised observation cap; logprob consistency tolerance; resource peaks; failure rates;
