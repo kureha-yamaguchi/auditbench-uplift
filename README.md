@@ -77,7 +77,7 @@ containers); every phase runs under `scripts/spend_guard.py` against the $1,500 
 ```bash
 # one-time: credentials for SkyPilot, adopt the existing volume
 printf '[default]\napi_key = "%s"\n' "$RUNPOD_API_KEY" > ~/.runpod/config.toml && sky check runpod
-sky volumes apply --name auditbench-uplift-durable --infra runpod/fr/EU-FR-1 --type runpod-network-volume --size 300 --use-existing -y
+sky volumes apply --name auditbench-uplift-durable --infra runpod/FR/EU-FR-1 --type runpod-network-volume --size 300 --use-existing -y
 
 # provision + setup (idempotent; state lives on /workspace)
 sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y

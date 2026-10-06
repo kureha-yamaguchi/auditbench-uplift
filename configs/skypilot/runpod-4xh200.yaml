@@ -7,7 +7,7 @@
 name: auditbench
 
 resources:
-  infra: runpod/fr/EU-FR-1
+  infra: runpod/FR/EU-FR-1
   instance_type: 4x_H200-SXM_SECURE     # $18.36/h list price
   disk_size: 200                        # container disk; durable state lives on the volume
   ports: [8000]                         # vLLM endpoint (loopback use only; exposed for debugging)
