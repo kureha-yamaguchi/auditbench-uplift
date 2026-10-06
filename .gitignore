@@ -13,6 +13,7 @@ trajectories/*
 checkpoints/*
 !checkpoints/README.md
 jobs/
+runs_local/
 wandb/
 *.log
 !grader/fixtures/*.log

@@ -135,14 +135,20 @@ def build_task(unit: TaskUnit, targets: dict[str, Target], out_root: Path) -> Pa
     (task_dir / "environment" / "Dockerfile").write_text(ENV_DOCKERFILE)
     (task_dir / "tests" / "Dockerfile").write_text(TESTS_DOCKERFILE)
     (task_dir / "tests" / "test.sh").write_text(TEST_SH)
-    (task_dir / "tests" / "test.sh").chmod(0o755)
     (task_dir / "tests" / "ground_truth.json").write_text(json.dumps(_ground_truth(unit, targets), indent=1))
     shutil.copytree(GRADER_SRC, task_dir / "tests" / "grader", ignore=shutil.ignore_patterns("__pycache__", "fixtures", "*.pyc"))
 
     oracle = json.dumps(_oracle_findings(unit, targets, lines), indent=1)
     (task_dir / "solution" / "solve.sh").write_text("#!/bin/bash\nset -eu\ncat > /app/findings.json <<'JSON'\n" + oracle + "\nJSON\n")
-    (task_dir / "solution" / "solve.sh").chmod(0o755)
+    _normalise_modes(task_dir)
     return task_dir
+
+
+def _normalise_modes(task_dir: Path) -> None:
+    # Harbor uploads solution/ and tests/ as permission-preserving tarballs; a restrictive host umask
+    # (e.g. 0007) would otherwise leave root-owned 0770 directories the unprivileged agent cannot enter.
+    for p in [task_dir, *task_dir.rglob("*")]:
+        p.chmod(0o755 if p.is_dir() or p.suffix == ".sh" else 0o644)
 
 
 def slice_sha256(unit: TaskUnit) -> str:

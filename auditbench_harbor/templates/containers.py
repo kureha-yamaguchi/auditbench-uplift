@@ -10,7 +10,8 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash agent
 WORKDIR /app
 COPY audit.log /app/audit.log
 RUN chown root:root /app/audit.log && chmod 0444 /app/audit.log \\
- && mkdir -p /app/scratch && chown -R agent:agent /app/scratch && chown agent:agent /app
+ && mkdir -p /app/scratch && chown -R agent:agent /app/scratch \\
+ && chown root:root /app && chmod 1777 /app   # sticky: the agent can create findings.json but not delete/replace the log
 """
 
 # The separate verifier image is built from tests/ (Harbor uses tests/ as the build context).

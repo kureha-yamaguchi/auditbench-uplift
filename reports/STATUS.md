@@ -16,3 +16,9 @@ Generated artefacts and checks run on 2026-10-03 (laptop, no sandbox provider, n
 Not run (requires the GPU pod): Docker isolation smoke, Qwen smoke, baselines, pilot, training, control baseline.
 
 Infrastructure amendment 2026-10-05: SkyPilot + RunPod API key (`configs/skypilot/runpod-4xh200.yaml`, `scripts/phase.sh`), Modal sandboxes required, network volume adopted into SkyPilot, $1,500 total cap with per-phase pod self-stop. Spend so far: ~$175 of pod time on 2026-10-04 (bootstrap + idle), state preserved on the volume.
+
+Local Modal checks 2026-10-06 (no model, artefacts in git-ignored `runs_local/jobs/`): oracle 8/8 on dev after normalising task file
+modes (restrictive host umask broke the unprivileged agent) and making `/app` root-owned sticky; isolation probe
+(`auditbench_harbor/probe_agent.py`) on 7 dev tasks: agent uid 1000, DNS/TCP/HTTPS blocked, no private files/label strings/secrets
+visible, log immutable, reward spoof via `/logs/verifier` ineffective (separate verifier; reward 1 only on the two negative-window
+tasks where `[]` is correct). Modal does not enforce the memory limit (3 GiB allocation succeeded; accepted by the user).
