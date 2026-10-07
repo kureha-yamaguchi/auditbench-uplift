@@ -50,6 +50,7 @@ vllm_up() {
   [ "$(nvidia-smi -L 2>/dev/null | wc -l)" -ge 4 ] || { echo "phase needs 4 visible GPUs (run via scripts/run_phase.sh, which passes --gpus)"; nvidia-smi -L; exit 1; }
   nohup python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
     --served-model-name Qwen3-8B --tensor-parallel-size 1 --data-parallel-size 4 --max-model-len 32768 \
+    --override-generation-config '{"max_tokens": 8192}' \
     --chat-template "$DURABLE/harbor-train/skyrl-train/skyrl_train/utils/templates/qwen3_acc_thinking.jinja2" \
     --port 8000 > "$DURABLE/vllm.log" 2>&1 &
   for _ in $(seq 1 120); do curl -sf localhost:8000/v1/models >/dev/null && return; sleep 5; done
@@ -61,11 +62,12 @@ case "$PHASE" in
     harbor run -p tasks/dev --n-tasks 2 -a oracle --env "$AUDITBENCH_SANDBOX" --job-name smoke-oracle -n 2 -o "$DURABLE/jobs"
     python scripts/index_trajectories.py "$DURABLE/jobs/smoke-oracle" --name smoke-oracle --split dev
     vllm_up
-    # Does vLLM clip or reject prompt + max_tokens > max-model-len? Decides whether usable context is 32k or ~24.5k.
+    # Contract check: with max_tokens omitted, a short prompt must stop at 8,192 tokens (server default) and a 28k prompt must
+    # succeed with the completion clipped to the remaining context (2026-10-07: a fixed max_tokens was rejected, not clipped).
     python - <<'PY' | tee "$DURABLE/reports/smoke_context_probe.json"
 import json, urllib.request, urllib.error
 def ask(n_words):
-    body = {"model": "Qwen3-8B", "max_tokens": 8192, "messages": [{"role": "user", "content": "word " * n_words + "\nReply OK."}]}
+    body = {"model": "Qwen3-8B", "messages": [{"role": "user", "content": "word " * n_words + "\nReply OK."}]}
     req = urllib.request.Request("http://127.0.0.1:8000/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
     try:
         r = json.load(urllib.request.urlopen(req, timeout=600))
@@ -73,7 +75,7 @@ def ask(n_words):
                 "finish_reason": r["choices"][0]["finish_reason"]}
     except urllib.error.HTTPError as e:
         return {"ok": False, "status": e.code, "error": e.read().decode()[:500]}
-print(json.dumps({"max_model_len": 32768, "max_tokens": 8192, "prompt_20k": ask(20000), "prompt_28k": ask(28000)}, indent=1))
+print(json.dumps({"max_model_len": 32768, "server_default_max_tokens": 8192, "request_max_tokens": None, "prompt_1k": ask(1000), "prompt_28k": ask(28000)}, indent=1))
 PY
     AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs" \
       --dataset-path tasks/dev --n-tasks 4 2>/dev/null || AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs"

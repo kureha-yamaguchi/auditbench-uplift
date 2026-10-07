@@ -27,7 +27,8 @@ sampling:
   min_p: 0.0
   presence_penalty: 0.0
   frequency_penalty: 0.0
-  max_tokens_per_completion: 8192         # clipped to remaining context by the server
+  max_tokens_per_completion: 8192         # server default (vLLM --override-generation-config); requests omit max_tokens so
+                                          # vLLM clips to the remaining context instead of rejecting (smoke 2026-10-07)
 context:
   max_model_len: 32768
   observation_cap: "10000 bytes per tool output (Terminus-2 _limit_output_length; not configurable in 0.23.0; full output stays in the sandbox)"

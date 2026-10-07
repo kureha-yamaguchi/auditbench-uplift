@@ -113,6 +113,8 @@ def render_instruction(task: str, representation: str, dataset: str, os_name: st
 
 {GOALS[task]}
 
+**Required output.** Before you finish you must create `/app/findings.json` (a JSON array, see "Reporting {noun}" below). {'This is also required when you conclude that nothing suspicious happened: then write `[]`. ' if task != 'classification' else 'It must contain exactly one verdict object. '}A missing or invalid file scores zero regardless of your analysis.
+
 # Setup
 
 The audit log of a {os_name} system is at `/app/audit.log` ({n_lines} lines). The file is read-only. You have a shell with standard Unix tools, `rg` (ripgrep), `jq` and Python 3 available; `/app/scratch` is writable. There is no network access. Investigate the log with the terminal: search, filter and read the relevant lines. Do not try to read the whole file into one command output; it will be truncated.

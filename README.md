@@ -113,7 +113,10 @@ per-evaluation dev scores and tables from `score_job.py`, and the data-manifest 
   to `await Trial.create(...)` and makes agent timeouts reward-0 policy outcomes trained on the saved transcript (per-trajectory
   mask if none); only infrastructure errors mask the whole prompt group.
 - harbor-train re-tokenises the chat transcript (no rollout logprobs); exact token reconstruction must be measured in the pilot.
-- `max_tokens=8192` per request: if vLLM rejects prompt + 8,192 > 32,768 instead of clipping, usable context is ~24.5k (smoke).
+- Per-completion cap: requests omit `max_tokens`; vLLM's server default (8,192) is clipped to the remaining context (verified by the
+  smoke context probe). The training-time engine (SkyRL HTTP endpoint -> vLLM) must show the same clipping at the pilot gate.
+- Instruction amendment 2026-10-07 (before any baseline): an explicit 'Required output' paragraph, after 21% of smoke trials ended
+  without writing /app/findings.json. Smoke trajectories predate it; the baseline and all arms use the amended tasks.
 - Terminus-2 caps each tool output at 10,000 bytes (not a token count); the realised token cap must be measured.
 - Token ids / logprobs require `collect_rollout_details=true` (set in the configs); the trajectory indexer records their absence as a gap.
 - harbor-train's generator masks a whole prompt-group on any infrastructure failure; drop/recollect accounting must be read from its metrics.

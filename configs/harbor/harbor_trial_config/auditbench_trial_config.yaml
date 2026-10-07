@@ -24,7 +24,7 @@ agent:
       top_p: 1.0
       top_k: -1
       min_p: 0.0
-      max_tokens: 8192
+      # no max_tokens: the serving engine caps at 8192 and clips to the remaining context (see launch_training.sh)
 environment:
   type: ${oc.env:AUDITBENCH_SANDBOX,modal}    # RunPod pods cannot run nested containers
   override_cpus: 1
