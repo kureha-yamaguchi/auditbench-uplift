@@ -4,7 +4,7 @@
 #   bash scripts/unattended.sh > runs_local/sky/unattended.log 2>&1 &
 # Steps (each via scripts/run_phase.sh; the pod is kept up between steps by /workspace/auditbench/KEEP_POD and stopped at the end
 # or on the first failure):
-#   0 wait for the baseline chain  1 base on test  2 pilot (5 it)  3 defence-short (10 it)  4 dev evaluation of every export
+#   0 wait for the baseline chain  2 pilot (5 it)  1 base on test (after the pilot so the slow local test build can finish)  3 defence-short (10 it)  4 dev evaluation of every export
 #   5 §5.3 selection  6 defence-selected on test  7 collect artefacts, stop the pod
 # Test tasks are synced to /workspace/auditbench/test_tasks only for the duration of a test evaluation (never during training).
 set -uo pipefail
@@ -29,7 +29,11 @@ run() {  # name, env assignments..., -- phase
   env KEEP_POD=1 "${envs[@]}" bash scripts/run_phase.sh "$@" > "runs_local/sky/$name.log" 2>&1 || fail "$name (see runs_local/sky/$name.log)"
   say "step $name: done"
 }
-sync_test_tasks() { [ -d tasks/test ] || fail "tasks/test not built"; rsync -az --delete -e "ssh -o BatchMode=yes" tasks/test/ "$NODE:$DURABLE/test_tasks/" || fail "test task sync"; }
+sync_test_tasks() {  # wait for a complete local build (325 sealed test tasks) before syncing; never sync a partial set
+  local n=0; for _ in $(seq 1 720); do n=$(ls tasks/test 2>/dev/null | wc -l); [ "$n" -ge 325 ] && ! pgrep -f "auditbench-harbor build" >/dev/null && break; sleep 10; done
+  [ "$n" -ge 325 ] || fail "tasks/test incomplete ($n/325)"
+  rsync -az --delete -e "ssh -o BatchMode=yes" tasks/test/ "$NODE:$DURABLE/test_tasks/" || fail "test task sync"
+}
 export_dir() { $SSH "find $DURABLE/runs/$1/exports -maxdepth 3 -name config.json -path '*global_step_$2*' -printf '%h\n' 2>/dev/null | head -1"; }
 
 # 0. baseline chain
@@ -39,15 +43,15 @@ sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up after th
 $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
 collect; say "baseline done; session cap \$400 recorded"
 
-# 1. base model on test (evaluation only)
-sync_test_tasks
-run eval-base-test EVAL_SPLIT=test EVAL_ARM=base EVAL_STEP=0 -- eval
-$SSH "rm -rf $DURABLE/test_tasks"; collect
-
 # 2. pilot
 run pilot -- pilot
 [ -n "$(export_dir pilot 5)" ] || fail "pilot produced no HF export at global_step_5"
 collect
+
+# 1. base model on test (evaluation only)
+sync_test_tasks
+run eval-base-test EVAL_SPLIT=test EVAL_ARM=base EVAL_STEP=0 -- eval
+$SSH "rm -rf $DURABLE/test_tasks"; collect
 
 # 3. short defence run from original weights
 run defence-short TRAIN_CONFIG=configs/training/defence-short.yaml -- defence-short
