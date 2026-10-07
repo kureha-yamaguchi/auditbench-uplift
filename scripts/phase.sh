@@ -39,7 +39,10 @@ python scripts/spend_guard.py watch --ledger "$DURABLE/spend.json" --phase "$gua
   > "$DURABLE/spend_guard.$PHASE.log" 2>&1 &
 GUARD=$!
 finish() {
+  rc=$?
   kill "$GUARD" 2>/dev/null || true
+  # Completion marker polled by scripts/run_phase.sh over ssh (the local SkyPilot API server is unreliable for long jobs).
+  [ -n "${RUN_TAG:-}" ] && { mkdir -p "$DURABLE/phase_status"; echo "$rc" > "$DURABLE/phase_status/$RUN_TAG.exit"; }
   rsync -rlptD --no-owner --no-group "$REPO/reports/" "$DURABLE/reports/" 2>/dev/null || true
   if [ "${KEEP_POD:-0}" != 1 ]; then python scripts/runpod_api.py stop "${RUNPOD_POD_ID:-}" || true; fi
 }

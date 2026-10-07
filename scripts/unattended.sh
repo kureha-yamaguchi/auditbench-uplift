@@ -45,8 +45,8 @@ if [ "${RESUME:-0}" = 1 ]; then
   until grep -q "is up on" runs_local/sky/ladder.log 2>/dev/null; do grep -q "non-capacity failure" runs_local/sky/ladder.log 2>/dev/null && fail "ladder"; sleep 60; done
   sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up"
   $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
-  if [ "${RESUME_FROM:-}" = after-pilot ]; then
-    say "resuming after the pilot: baseline already scored"
+  if [ "${RESUME_FROM:-}" = after-pilot ] || [ "${RESUME_FROM:-}" = defence ]; then
+    say "resuming later in the pipeline: baseline already scored"
   elif $SSH "test -d $DURABLE/jobs/baseline"; then   # raw job dir on this volume: rescore re-indexes it if the jsonl is gone
     run rescore -- rescore
   else
@@ -75,18 +75,20 @@ if [ "${RESUME_FROM:-}" = after-pilot ]; then
   done
   sky logs "$NODE" "$job" --no-follow 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > runs_local/sky/pilot.log || true
   say "pilot job $job succeeded"
-elif [ "${RESUME_FROM:-}" = pilot-done ]; then
+elif [ "${RESUME_FROM:-}" = pilot-done ] || [ "${RESUME_FROM:-}" = defence ]; then
   say "pilot already completed (export verified by hand); continuing"
 else
   run pilot -- pilot
 fi
-[ "${RESUME_FROM:-}" = pilot-done ] || [ -n "$(export_dir pilot 5)" ] || fail "pilot produced no HF export at global_step_5"
+[ "${RESUME_FROM:-}" = pilot-done ] || [ "${RESUME_FROM:-}" = defence ] || [ -n "$(export_dir pilot 5)" ] || fail "pilot produced no HF export at global_step_5"
 collect
 
-# 1. base model on test (evaluation only)
+# 1. base model on test (evaluation only); RESUME_FROM=defence: already done and scored on the node
+if [ "${RESUME_FROM:-}" = defence ]; then say "base test evaluation already done; continuing with the defence run"; else
 sync_test_tasks
 run eval-base-test EVAL_SPLIT=test EVAL_ARM=base EVAL_STEP=0 -- eval
 $SSH "rm -rf $DURABLE/test_tasks"; collect
+fi
 
 # 3. short defence run from original weights
 run defence-short TRAIN_CONFIG=configs/training/defence-short.yaml -- defence-short

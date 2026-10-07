@@ -30,19 +30,21 @@ echo "run_phase: $PHASE on $CLUSTER (--gpus $gpus, KEEP_POD=${KEEP_POD:-0})"
 # Submit detached and poll the job status: a `sky exec` that streams logs dies with the local API server (2026-10-07) even
 # though the job keeps running on the node. The job log is fetched at the end so the phase log stays complete.
 api_ok() { sky api status >/dev/null 2>&1; }
-ensure_api() { api_ok || { echo "run_phase: local SkyPilot API server down; restarting"; sky api start >/dev/null 2>&1 || true; sleep 5; }; }
+ensure_api() { api_ok || { echo "run_phase: local SkyPilot API server down; restarting"; pkill -9 -f "^[^ ]*/uv/tools/skypilot/[^ ]*python[^ ]* -m sky.server.server" 2>/dev/null || true; pkill -9 -f "^[^ ]*/uv/tools/skypilot/[^ ]*python[^ ]* -c from multiprocessing" 2>/dev/null || true; sleep 2; sky api start >/dev/null 2>&1 || true; sleep 5; }; }
+RUN_TAG="$PHASE-$(date -u +%Y%m%dT%H%M%S)-$RANDOM"
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=30 $CLUSTER"
+DURABLE=/workspace/auditbench
 ensure_api
-out=$(sky exec -c "$CLUSTER" --workdir . --gpus "$gpus" --env-file .env "${envs[@]}" --detach-run -- bash scripts/phase.sh "$PHASE" 2>&1) || { echo "$out" | tail -20; echo "run_phase: submission failed"; exit 1; }
+out=$(sky exec -c "$CLUSTER" --workdir . --gpus "$gpus" --env-file .env "${envs[@]}" --env "RUN_TAG=$RUN_TAG" --detach-run -- bash scripts/phase.sh "$PHASE" 2>&1) || { echo "$out" | tail -20; echo "run_phase: submission failed"; exit 1; }
 job=$(echo "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -oE "Job submitted, ID: [0-9]+" | grep -oE "[0-9]+$" | tail -1)
-[ -n "$job" ] || { echo "$out" | tail -20; echo "run_phase: could not determine the job id"; exit 1; }
-echo "run_phase: job $job submitted $(date -u +%FT%TZ)"
-status=""
+echo "run_phase: job ${job:-?} submitted as $RUN_TAG $(date -u +%FT%TZ)"
+# Poll the phase's completion marker on the node (written by phase.sh's EXIT trap); no local API server involved.
+rc=""
 while :; do
   sleep 60
-  ensure_api
-  status=$(sky queue "$CLUSTER" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v j="$job" '$1==j {for(i=2;i<=NF;i++) if ($i ~ /^(PENDING|SETTING_UP|RUNNING|SUCCEEDED|FAILED|FAILED_SETUP|FAILED_DRIVER|CANCELLED|CANCELLING)$/) {print $i; exit}}')
-  case "$status" in SUCCEEDED|FAILED|FAILED_SETUP|FAILED_DRIVER|CANCELLED) break;; esac
+  rc=$($SSH "cat $DURABLE/phase_status/$RUN_TAG.exit 2>/dev/null" 2>/dev/null || true)
+  [ -n "$rc" ] && break
 done
-echo "run_phase: job $job finished with status $status $(date -u +%FT%TZ)"
-sky logs "$CLUSTER" "$job" --no-follow 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | tail -400
-[ "$status" = SUCCEEDED ]
+echo "run_phase: $RUN_TAG finished with exit code $rc $(date -u +%FT%TZ)"
+[ -n "$job" ] && $SSH "cat ~/sky_logs/*-$job*/run.log 2>/dev/null || ls -d ~/sky_logs/* | tail -1 | xargs -I{} cat {}/run.log" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | tail -400
+[ "$rc" = 0 ]
