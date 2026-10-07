@@ -13,7 +13,9 @@ set -euo pipefail
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 SPEC="$REPO/configs/skypilot/runpod-4xh200.yaml"
 GEN="$REPO/runs_local/sky/generated"; mkdir -p "$GEN"
-DCS=${DCS:-"EU-FR-1 US-CA-2 US-GA-2 AP-JP-1 EUR-IS-4"}
+# Only data centres with network-volume support (RunPod GraphQL dataCenters.storageSupport, checked 2026-10-07) that
+# listed H200/H100 stock; the existing EU-FR-1 volume goes first.
+DCS=${DCS:-"EU-FR-1 US-CA-2 AP-JP-1 US-NE-1 EUR-IS-3 CA-MTL-1"}
 SLEEP=${SLEEP:-30}
 CLUSTER=auditbench
 
@@ -41,13 +43,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-ensure_volume() {  # $1 data centre, $2 country, $3 volume name
-  sky volumes ls 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$3" && return
+ensure_volume() {  # $1 data centre, $2 country, $3 volume name; returns 1 if the data centre cannot host a volume
+  sky volumes ls 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$3" && return 0
   if runpod_volume_names | grep -qx "$3"; then
     sky volumes apply --name "$3" --infra "runpod/$2/$1" --type runpod-network-volume --size 300 --use-existing -y >/dev/null
   else
     echo "$(date -u +%FT%TZ) creating network volume $3 in $1 (300 GB)"
-    sky volumes apply --name "$3" --infra "runpod/$2/$1" --type runpod-network-volume --size 300 -y >/dev/null
+    sky volumes apply --name "$3" --infra "runpod/$2/$1" --type runpod-network-volume --size 300 -y >/dev/null || true
+    # `apply` can return success without RunPod creating anything (data centres without storage support).
+    if ! runpod_volume_names | grep -qx "$3"; then
+      echo "$(date -u +%FT%TZ) $1 cannot host a network volume; skipping it"
+      return 1
+    fi
     CREATED+=("$3")
   fi
 }
@@ -57,7 +64,7 @@ while true; do
   round=$((round + 1))
   for dc in $DCS; do
     cc=$(country "$dc"); vol=$(volume_for "$dc")
-    ensure_volume "$dc" "$cc" "$vol"
+    ensure_volume "$dc" "$cc" "$vol" || continue
     yaml="$GEN/$dc.yaml"
     sed -e "s|runpod/FR/EU-FR-1|runpod/$cc/$dc|" -e "s|auditbench-uplift-durable|$vol|" -e "s|^workdir: \.$|workdir: $REPO|" "$SPEC" > "$yaml"
     log="$GEN/$dc.launch.log"
@@ -68,8 +75,8 @@ while true; do
       sky status "$CLUSTER" 2>/dev/null | tail -n +2 || true
       exit 0
     fi
-    if grep -q "ResourcesUnavailableError" "$log"; then
-      continue   # capacity only; next data centre
+    if grep -qE "ResourcesUnavailableError|VolumeNotFoundError" "$log"; then
+      continue   # capacity only (or the volume is not visible yet); next data centre
     fi
     echo "$(date -u +%FT%TZ) non-capacity failure on $dc; see $log" >&2
     if sky status "$CLUSTER" 2>/dev/null | grep -qE "^$CLUSTER\s"; then
