@@ -50,7 +50,7 @@ vllm_up() {
   [ "$(nvidia-smi -L 2>/dev/null | wc -l)" -ge 4 ] || { echo "phase needs 4 visible GPUs (run via scripts/run_phase.sh, which passes --gpus)"; nvidia-smi -L; exit 1; }
   nohup python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
     --served-model-name Qwen3-8B --tensor-parallel-size 1 --data-parallel-size 4 --max-model-len 32768 \
-    --override-generation-config '{"max_tokens": 8192}' \
+    --override-generation-config '{"max_new_tokens": 8192}' \
     --chat-template "$DURABLE/harbor-train/skyrl-train/skyrl_train/utils/templates/qwen3_acc_thinking.jinja2" \
     --port 8000 > "$DURABLE/vllm.log" 2>&1 &
   for _ in $(seq 1 120); do curl -sf localhost:8000/v1/models >/dev/null && return; sleep 5; done

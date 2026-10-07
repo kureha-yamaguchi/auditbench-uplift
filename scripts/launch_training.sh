@@ -36,7 +36,7 @@ python -m examples.harbor.entrypoints.main_harbor \
   generator.num_inference_engines=4 generator.inference_engine_tensor_parallel_size=1 \
   +generator.engine_init_kwargs.chat_template=skyrl_train/utils/templates/qwen3_acc_thinking.jinja2 \
   +generator.engine_init_kwargs.max_model_len=$MAXLEN \
-  +generator.engine_init_kwargs.override_generation_config.max_tokens=8192 generator.sampling_params.max_generate_length=8192 \
+  +generator.engine_init_kwargs.override_generation_config.max_new_tokens=8192 generator.sampling_params.max_generate_length=8192 \
   trainer.epochs=1 trainer.train_batch_size=$PROMPTS trainer.policy_mini_batch_size=$PROMPTS \
   trainer.update_epochs_per_batch=1 trainer.micro_forward_batch_size_per_gpu=1 trainer.micro_train_batch_size_per_gpu=1 \
   trainer.eval_before_train=true trainer.eval_interval=$EVAL_INT trainer.eval_batch_size=128 \
