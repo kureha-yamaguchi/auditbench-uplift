@@ -8,7 +8,7 @@ retry:
   max_retries: 2                      # transient infrastructure only; wrong answers are never retried
   include_exceptions: ["EnvironmentStartError", "AddTestsDirError", "DownloadVerifierDirError", "TimeoutError"]
 environment:
-  type: ${oc.env:AUDITBENCH_SANDBOX,docker}
+  type: modal                         # plain YAML: harbor run -c does not resolve OmegaConf env placeholders
   override_cpus: 1
   override_memory_mb: 1024
   override_storage_mb: 1024
@@ -20,7 +20,7 @@ agents:
     model_name: hosted_vllm/Qwen3-8B
     override_timeout_sec: 1200
     kwargs:
-      api_base: ${oc.env:AUDITBENCH_API_BASE}
+      api_base: http://127.0.0.1:8000/v1   # vLLM on the node (scripts/phase.sh vllm_up)
       max_turns: 32
       suppress_max_turns_warning: true
       enable_summarize: false
