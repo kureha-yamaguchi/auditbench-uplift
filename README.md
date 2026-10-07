@@ -82,6 +82,7 @@ sky volumes apply --name auditbench-uplift-durable --infra runpod/FR/EU-FR-1 --t
 
 # provision + setup (idempotent; state lives on /workspace)
 sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y --retry-until-up
+bash scripts/launch_ladder.sh      # or: GPU ladder x data-centre ladder (creates a volume per new DC on demand) until a node is free
 
 # phases, each self-stopping the pod at the end (sky start auditbench before the next one)
 sky exec -c auditbench --env-file .env -- bash scripts/phase.sh smoke
