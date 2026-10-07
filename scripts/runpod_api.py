@@ -34,7 +34,12 @@ def status(pod_id: str) -> dict:
     return _call("GET", f"/pods/{pod_id}")
 
 
-def stop(pod_id: str) -> dict:
+KEEP_MARKER = "/workspace/auditbench/KEEP_POD"   # created by an orchestrator that chains phases; removed when it is done
+
+
+def stop(pod_id: str, force: bool = False) -> dict:
+    if not force and os.path.exists(KEEP_MARKER):
+        return {"id": pod_id, "desiredStatus": "RUNNING", "detail": f"stop skipped: {KEEP_MARKER} present"}
     return _call("POST", f"/pods/{pod_id}/stop")
 
 
@@ -43,6 +48,8 @@ def start(pod_id: str) -> dict:
 
 
 def main() -> None:
+    if len(sys.argv) == 3 and sys.argv[1] == "stop-force":
+        print(json.dumps(stop(sys.argv[2], force=True))); return
     if len(sys.argv) != 3 or sys.argv[1] not in ("status", "stop", "start"):
         raise SystemExit(__doc__)
     out = {"status": status, "stop": stop, "start": start}[sys.argv[1]](sys.argv[2])

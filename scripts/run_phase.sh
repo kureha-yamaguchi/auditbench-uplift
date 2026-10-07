@@ -14,6 +14,7 @@ gpus=$(sky status "$CLUSTER" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -oE 
 [ -n "$gpus" ] || { echo "run_phase: cluster $CLUSTER is not up (sky status)"; exit 1; }
 
 envs=(--env "KEEP_POD=${KEEP_POD:-0}")
+for v in TRAIN_CONFIG EVAL_SPLIT EVAL_MODEL EVAL_ARM EVAL_STEP AUDITBENCH_SESSION_CAP_USD; do [ -n "${!v:-}" ] && envs+=(--env "$v=${!v}"); done
 toml="$HOME/.modal.toml"
 val() { grep -E "^$1=" .env | cut -d= -f2- | sed 's/[[:space:]]*#.*//; s/^"//; s/"$//'; }
 if [ -z "$(val MODAL_TOKEN_ID)" ] && [ -f "$toml" ]; then

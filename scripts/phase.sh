@@ -30,7 +30,7 @@ fi
 RATE=${RATE:-18.36}
 echo "phase=$PHASE pod=${RUNPOD_POD_ID:-?} rate_usd_per_hour=$RATE gpu=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)"
 
-guard_phase=$([ "$PHASE" = smoke ] || [ "$PHASE" = baseline ] && echo setup_smoke_baseline || echo "$PHASE")
+case "$PHASE" in smoke|baseline) guard_phase=setup_smoke_baseline;; eval) guard_phase=eval;; defence-short) guard_phase=defence;; *) guard_phase=$PHASE;; esac
 python scripts/spend_guard.py watch --ledger "$DURABLE/spend.json" --phase "$guard_phase" --rate "$RATE" \
   --stop-file "$DURABLE/STOP" --stop-cmd "pkill -f harbor; pkill -f main_harbor; pkill -f vllm" --stop-pod self \
   > "$DURABLE/spend_guard.$PHASE.log" 2>&1 &
@@ -48,7 +48,9 @@ vllm_up() {
     echo "stale vLLM processes without a healthy endpoint; restarting"; pkill -f "vllm.entrypoints.openai.api_server" || true; sleep 5
   fi
   [ "$(nvidia-smi -L 2>/dev/null | wc -l)" -ge 4 ] || { echo "phase needs 4 visible GPUs (run via scripts/run_phase.sh, which passes --gpus)"; nvidia-smi -L; exit 1; }
-  nohup python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
+  # EVAL_MODEL: serve a local HF export instead of the pinned base revision (same tokenizer/template; served name unchanged).
+  if [ -n "${EVAL_MODEL:-}" ]; then MODEL_ARGS="--model $EVAL_MODEL --tokenizer Qwen/Qwen3-8B"; else MODEL_ARGS="--model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218"; fi
+  nohup python -m vllm.entrypoints.openai.api_server $MODEL_ARGS \
     --served-model-name Qwen3-8B --tensor-parallel-size 1 --data-parallel-size 4 --max-model-len 32768 \
     --override-generation-config '{"max_new_tokens": 8192}' \
     --chat-template "$DURABLE/harbor-train/skyrl-train/skyrl_train/utils/templates/qwen3_acc_thinking.jinja2" \
@@ -96,11 +98,24 @@ PY
     python scripts/index_trajectories.py "$DURABLE/jobs/baseline" --name baseline --policy '{"arm":"base","step":0}'
     python scripts/score_job.py trajectories/baseline.jsonl --split dev --step 0 --arm base
     python scripts/score_job.py trajectories/baseline.jsonl --split train --step 0 --arm base ;;
-  pilot|defence|control)
-    pkill -f "vllm.entrypoints.openai.api_server" || true   # the trainer owns the GPUs
-    python scripts/make_sampling_manifest.py --config "configs/training/$PHASE.yaml" --materialise
-    bash scripts/launch_training.sh "configs/training/$PHASE.yaml" "$DURABLE"
+  pilot|defence|control|defence-short)
+    pkill -f "^[^ ]*python[^ ]* -m vllm.entrypoints" || true   # the trainer owns the GPUs
+    CFG=${TRAIN_CONFIG:-configs/training/$PHASE.yaml}
+    mkdir -p ~/data/auditbench && ln -sfn "$REPO/tasks/dev" ~/data/auditbench/dev
+    python scripts/make_sampling_manifest.py --config "$CFG" --materialise
+    bash scripts/launch_training.sh "$CFG" "$DURABLE"
     [ "$PHASE" = pilot ] && python scripts/spend_guard.py iteration-budget --ledger "$DURABLE/spend.json" | tee "$DURABLE/reports/iteration_budget.json"
     [ "$PHASE" = defence ] && python scripts/select_checkpoint.py --arm defence || true ;;
+  eval)
+    # Standalone evaluation of a model on dev or the (authorised) test split: EVAL_SPLIT, EVAL_ARM, EVAL_STEP, optional EVAL_MODEL.
+    : "${EVAL_SPLIT:?}" "${EVAL_ARM:?}" "${EVAL_STEP:?}"
+    pkill -f "^[^ ]*python[^ ]* -m vllm.entrypoints" || true   # the model may differ from the running server
+    sleep 5; vllm_up
+    if [ "$EVAL_SPLIT" = test ]; then DS="$DURABLE/test_tasks"; [ -d "$DS" ] || { echo "test tasks not synced to $DS"; exit 1; }; else DS="tasks/$EVAL_SPLIT"; fi
+    JOB="eval-$EVAL_ARM-$EVAL_SPLIT-step$(printf %04d "$EVAL_STEP")-$(date -u +%Y%m%dT%H%M%S)"
+    sed "s|__DATASET__|$DS|" configs/harbor/eval_job.yaml > "$DURABLE/reports/$JOB.job.yaml"
+    harbor run -c "$DURABLE/reports/$JOB.job.yaml" --job-name "$JOB" -o "$DURABLE/jobs"
+    python scripts/index_trajectories.py "$DURABLE/jobs/$JOB" --name "$JOB" --split "$EVAL_SPLIT" --policy "{\"arm\":\"$EVAL_ARM\",\"step\":$EVAL_STEP}"
+    python scripts/score_job.py "trajectories/$JOB.jsonl" --split "$EVAL_SPLIT" --step "$EVAL_STEP" --arm "$EVAL_ARM" ;;
   *) echo "unknown phase $PHASE"; exit 1 ;;
 esac

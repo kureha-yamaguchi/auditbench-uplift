@@ -20,7 +20,9 @@ import time
 from pathlib import Path
 
 TOTAL_CAP_USD = 1500.0
-PHASE_CAPS_USD = {"setup_smoke_baseline": 300.0, "pilot": 250.0, "defence": 475.0, "control": 475.0}
+PHASE_CAPS_USD = {"setup_smoke_baseline": 300.0, "pilot": 250.0, "defence": 475.0, "control": 475.0, "eval": 150.0}
+# Optional per-session ceiling (user, 2026-10-07: $400 for the unattended session): `session-start` records the ledger total.
+SESSION_CAP_USD = float(os.environ.get("AUDITBENCH_SESSION_CAP_USD", "0") or 0)
 
 
 def load(p: Path) -> dict:
@@ -52,6 +54,9 @@ def watch(args) -> None:
             over.append(f"phase {args.phase} cap {PHASE_CAPS_USD.get(args.phase)}")
         if total(d) >= TOTAL_CAP_USD:
             over.append(f"total cap {TOTAL_CAP_USD}")
+        sess = d.get("session")
+        if sess and sess.get("cap") and total(d) - sess["start_total"] >= sess["cap"]:
+            over.append(f"session cap {sess['cap']}")
         if over:
             d["events"].append({"t": time.time(), "stop": over})
             save(ledger, d)
@@ -74,7 +79,12 @@ def _stop_pod(pod_id: str) -> None:
     if not pod_id:
         print("stop pod: no pod id available")
         return
-    print("stop pod:", mod.stop(pod_id))
+    print("stop pod:", mod.stop(pod_id, force=True))
+
+
+def session_start(args) -> None:
+    d = load(Path(args.ledger)); d["session"] = {"start_total": total(d), "cap": args.cap, "t": time.time()}; save(Path(args.ledger), d)
+    print(json.dumps(d["session"]))
 
 
 def iteration_budget(args) -> None:
@@ -104,6 +114,7 @@ def main() -> None:
     w.add_argument("--stop-pod", default=None, help="RunPod pod id, or 'self' to read RUNPOD_POD_ID, to stop when a cap trips (needs RUNPOD_API_KEY)")
     w.add_argument("--poll-sec", type=int, default=60)
     w.set_defaults(fn=watch)
+    s = sub.add_parser("session-start"); s.add_argument("--ledger", required=True); s.add_argument("--cap", type=float, required=True); s.set_defaults(func=session_start)
     b = sub.add_parser("iteration-budget")
     b.add_argument("--ledger", required=True)
     b.add_argument("--pilot-iterations", type=int, default=10)

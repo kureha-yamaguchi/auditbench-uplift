@@ -3,7 +3,7 @@ run_name: pilot
 arm: defence
 seed: 3
 data: {train_manifest: manifests/sampling/pilot.jsonl, train_dir: ~/data/auditbench/pilot, dev_dir: ~/data/auditbench/dev}
-iterations: 10
+iterations: 5          # 2026-10-07: 5 of the permitted <=10 to fit the unattended session (PLAN §7.2 allows at most ten)
 prompts_per_iteration: 32
 samples_per_prompt: 8
 eval_interval: 5

@@ -17,7 +17,7 @@ from training.wandb_log import init_run, log_table
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("records")
-    ap.add_argument("--split", required=True, choices=["train", "dev"])
+    ap.add_argument("--split", required=True, choices=["train", "dev", "test"])
     ap.add_argument("--step", type=int, required=True)
     ap.add_argument("--arm", required=True)
     ap.add_argument("--no-wandb", action="store_true")
