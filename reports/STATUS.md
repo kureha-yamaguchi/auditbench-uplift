@@ -31,3 +31,18 @@ GPU smoke 2026-10-07 (RunPod CA-MTL-1, 4xH100-SXM $13.96/h after 4xH200 had no s
 output tokens. vLLM rejects prompt+max_tokens>32768 (no clipping) => usable context ~24.5k with max_tokens=8192; decision
 pending. Artefacts: `trajectories/smoke-qwen.jsonl` (node + local, git-ignored), `reports/runs/smoke/`. Fixes along the way:
 Modal env/tokens, `run_phase.sh` (sky exec needs --workdir and --gpus), stale Harbor job dirs, Cloudflare UA, baseline_job literals.
+
+Baseline 2026-10-07 (pod i1yzo7h5ladqey, 4xH100-SXM, CA-MTL-1): 2,225 trials (445 tasks x 5 attempts) in 2 h at concurrency 32;
+step-0 scores: dev D = 0.367, false-alert rate 0.032, validity 0.744 (`reports/evaluations/base-{dev,train}-step0000.json`).
+W&B: the API key has no writable entity ("entity not found" / "permission denied"), so all phases run with WANDB_MODE=offline
+(recorded deviation; local run files on the node).
+
+Pilot 2026-10-07 16:13-18:54 UTC (pod dh7q2j8xb1shpz, 4xH100-SXM): the harbor-train/SkyRL path works end to end on 80 GB GPUs —
+5 GRPO iterations (32 prompts x 8), ~19-21 min each (rollouts ~14-16 min, logprob forward ~65 s, policy update ~4-5 min), 0 masked
+prompt groups, 0 timeouts, 1 transient Modal ServiceError retried successfully. Batch mean strict reward 0.44, 0.37, 0.32, 0.33, 0.22;
+mean response length 9.1k -> 11.2k tokens. Trainer-integrated dev evaluation (5 attempts, SkyRL's own per-task avg_score):
+mean 0.615 -> 0.672 at step 5, pass@5 0.808 -> 0.821. The run's final save failed with the 280 GB volume full (two 92 GB resume
+checkpoints + two 31 GB fp32 HF exports); the step-5 export was verified complete, then the pilot checkpoints/exports were deleted
+to make room for the defence run (deviation from the §8.3 retention rule, forced by capacity). Pilot config: 5 of the permitted
+<=10 iterations (unattended-session time limit). Defence-short: 10 iterations, no mid-run resume checkpoints, exports at 5/10,
+selection from standalone dev evaluations of each export.
