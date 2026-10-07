@@ -59,15 +59,17 @@ vllm_up() {
 
 case "$PHASE" in
   smoke)
-    harbor run -p tasks/dev --n-tasks 2 -a oracle --env "$AUDITBENCH_SANDBOX" --job-name smoke-oracle -n 2 -o "$DURABLE/jobs"
-    python scripts/index_trajectories.py "$DURABLE/jobs/smoke-oracle" --name smoke-oracle --split dev
+    # Fresh job names each run: Harbor resumes an existing job directory by name (and its saved config) instead of rerunning.
+    STAMP=$(date -u +%Y%m%dT%H%M%S)
+    harbor run -p tasks/dev --n-tasks 2 -a oracle --env "$AUDITBENCH_SANDBOX" --job-name "smoke-oracle-$STAMP" -n 2 -o "$DURABLE/jobs"
+    python scripts/index_trajectories.py "$DURABLE/jobs/smoke-oracle-$STAMP" --name smoke-oracle --split dev
     vllm_up
     # Contract check: with max_tokens omitted, a short prompt must stop at 8,192 tokens (server default) and a 28k prompt must
     # succeed with the completion clipped to the remaining context (2026-10-07: a fixed max_tokens was rejected, not clipped).
     python - <<'PY' | tee "$DURABLE/reports/smoke_context_probe.json"
 import json, urllib.request, urllib.error
-def ask(n_words):
-    body = {"model": "Qwen3-8B", "messages": [{"role": "user", "content": "word " * n_words + "\nReply OK."}]}
+def ask(n_words, content=None):
+    body = {"model": "Qwen3-8B", "messages": [{"role": "user", "content": content or ("word " * n_words + "\nReply OK.")}]}
     req = urllib.request.Request("http://127.0.0.1:8000/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
     try:
         r = json.load(urllib.request.urlopen(req, timeout=600))
@@ -75,11 +77,19 @@ def ask(n_words):
                 "finish_reason": r["choices"][0]["finish_reason"]}
     except urllib.error.HTTPError as e:
         return {"ok": False, "status": e.code, "error": e.read().decode()[:500]}
-print(json.dumps({"max_model_len": 32768, "server_default_max_tokens": 8192, "request_max_tokens": None, "prompt_1k": ask(1000), "prompt_28k": ask(28000)}, indent=1))
+res = {"max_model_len": 32768, "server_default_max_tokens": 8192, "request_max_tokens": None,
+       "long_output": ask(0, "Count from 1 to 6000, one number per line, no other text."), "prompt_28k": ask(28000)}
+print(json.dumps(res, indent=1))
+lo, p28 = res["long_output"], res["prompt_28k"]
+ok28 = p28.get("ok") and p28.get("prompt_tokens", 0) + p28.get("completion_tokens", 0) <= 32768
+cap_ok = lo.get("ok") and lo.get("completion_tokens", 0) <= 8192
+if not (ok28 and cap_ok):
+    raise SystemExit("context contract check FAILED: 28k prompt ok=%s, long output ok=%s tokens=%s" % (p28.get("ok"), lo.get("ok"), lo.get("completion_tokens")))
+if lo.get("finish_reason") != "length":
+    print("note: long-output probe stopped before the cap (finish_reason=%s, %s tokens); cap not exercised" % (lo.get("finish_reason"), lo.get("completion_tokens")))
 PY
-    AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs" \
-      --dataset-path tasks/dev --n-tasks 4 2>/dev/null || AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name smoke-qwen --n-attempts 1 -o "$DURABLE/jobs"
-    python scripts/index_trajectories.py "$DURABLE/jobs/smoke-qwen" --name smoke-qwen --split dev ;;
+    harbor run -c configs/harbor/smoke_job.yaml --job-name "smoke-qwen-$STAMP" -o "$DURABLE/jobs"
+    python scripts/index_trajectories.py "$DURABLE/jobs/smoke-qwen-$STAMP" --name smoke-qwen ;;
   baseline)
     vllm_up
     AUDITBENCH_API_BASE=http://127.0.0.1:8000/v1 harbor run -c configs/harbor/baseline_job.yaml --job-name baseline -o "$DURABLE/jobs"
