@@ -41,9 +41,15 @@ export_dir() { $SSH "find $DURABLE/runs/$1/exports -maxdepth 3 -name config.json
 if [ "${RESUME:-0}" = 1 ]; then
   until grep -q "is up on" runs_local/sky/ladder.log 2>/dev/null; do grep -q "non-capacity failure" runs_local/sky/ladder.log 2>/dev/null && fail "ladder"; sleep 60; done
   sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up"
-  $SSH "test -f $NREPO/trajectories/baseline.jsonl" || fail "baseline.jsonl not on this node's volume (landed outside CA-MTL-1?)"
   $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
-  run rescore -- rescore
+  if $SSH "test -f $NREPO/trajectories/baseline.jsonl"; then
+    run rescore -- rescore
+  else
+    # Landed outside CA-MTL-1: the baseline index is on another volume. Regenerate the step-0 dev evaluation of the base model
+    # (needed for selection) with the standalone path; the train panel scoring is recovered later from the CA-MTL-1 volume.
+    say "baseline.jsonl not on this volume; re-evaluating base on dev for the step-0 scores"
+    run eval-base-dev EVAL_SPLIT=dev EVAL_ARM=base EVAL_STEP=0 -- eval
+  fi
 else
   until grep -qE "baseline finished|baseline FAILED" runs_local/sky/after_launch.log 2>/dev/null; do sleep 60; done
   grep -q "baseline finished" runs_local/sky/after_launch.log || fail "baseline"
