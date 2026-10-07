@@ -42,7 +42,7 @@ if [ "${RESUME:-0}" = 1 ]; then
   until grep -q "is up on" runs_local/sky/ladder.log 2>/dev/null; do grep -q "non-capacity failure" runs_local/sky/ladder.log 2>/dev/null && fail "ladder"; sleep 60; done
   sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up"
   $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
-  if $SSH "test -f $NREPO/trajectories/baseline.jsonl"; then
+  if $SSH "test -d $DURABLE/jobs/baseline"; then   # raw job dir on this volume: rescore re-indexes it if the jsonl is gone
     run rescore -- rescore
   else
     # Landed outside CA-MTL-1: the baseline index is on another volume. Regenerate the step-0 dev evaluation of the base model
