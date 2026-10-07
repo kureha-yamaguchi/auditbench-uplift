@@ -85,7 +85,9 @@ while true; do
     echo "$(date -u +%FT%TZ) non-capacity failure on $dc; see $log" >&2
     if sky status "$CLUSTER" 2>/dev/null | grep -qE "^$CLUSTER\s"; then
       echo "launch_ladder: a pod exists; stopping it so it does not bill idle" >&2
-      sky stop "$CLUSTER" -y >/dev/null 2>&1 || true
+      # SkyPilot cannot stop RunPod pods ("Stopping is currently not supported for runpod"); use the RunPod API.
+      pid=$(sky status "$CLUSTER" --json 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['handle'].get('instance_id',''))" 2>/dev/null || true)
+      [ -n "$pid" ] && (set -a; . "$REPO/.env"; set +a; python3 "$REPO/scripts/runpod_api.py" stop "$pid") || sky down "$CLUSTER" -y >/dev/null 2>&1 || true
     fi
     exit 1
   done

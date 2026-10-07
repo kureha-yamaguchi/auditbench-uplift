@@ -98,6 +98,9 @@ rsync -az "$(sky status --ip auditbench)":/workspace/auditbench/reports/ reports
 python scripts/select_checkpoint.py --arm defence
 python scripts/export_stage2.py --checkpoint defence-selected-S=/workspace/auditbench/runs/defence-seed1/exports/global_step_10
 sky down auditbench   # when finished; the volume persists
+# NOTE: `sky stop`/`sky start` are not supported for RunPod in SkyPilot 0.14. Stop/resume the pod with
+#   python scripts/runpod_api.py stop|start <pod id>   (phase.sh does this at the end of a phase unless KEEP_POD=1)
+# After a RunPod start the pod's SSH endpoint can change: run `sky status --refresh` before the next phase.
 ```
 
 W&B: `WANDB_PROJECT` (default `auditbench-uplift`) receives trainer metrics (`trainer.logger=wandb`),
