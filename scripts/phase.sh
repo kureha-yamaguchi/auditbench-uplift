@@ -10,6 +10,13 @@ set -euo pipefail
 PHASE=${1:?phase}
 DURABLE=/workspace/auditbench
 REPO="$DURABLE/auditbench-uplift"
+# `sky exec` syncs the workdir to ~/sky_workdir but does not rerun setup, so refresh the durable repo copy from it
+# first (same rules as node_bootstrap.sh; node-generated trajectories/ and reports/ are left alone).
+SRC="${SKY_WORKDIR:-$HOME/sky_workdir}"
+if [ -d "$SRC" ] && [ "$(cd "$SRC" && pwd -P)" != "$(cd "$REPO" && pwd -P)" ]; then
+  rsync -rlptD --no-owner --no-group --delete --exclude .venv --exclude .env --exclude 'tasks/test' --exclude jobs \
+    --exclude trajectories --exclude reports "$SRC/" "$REPO/"
+fi
 cd "$REPO"
 # Hourly rate for the spend ledger: the pod's actual price (the GPU ladder in configs/skypilot may have landed on a
 # cheaper type than 4xH200), else POD_RATE_USD_PER_HOUR, else the 4xH200 list price.
