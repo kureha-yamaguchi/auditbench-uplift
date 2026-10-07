@@ -19,7 +19,9 @@ def _call(method: str, path: str) -> dict:
     key = os.environ.get("RUNPOD_API_KEY")
     if not key:
         raise SystemExit("RUNPOD_API_KEY not set")
-    req = urllib.request.Request(f"{BASE}{path}", method=method, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+    # Cloudflare in front of the RunPod API rejects urllib's default User-Agent (403, "error code: 1010").
+    req = urllib.request.Request(f"{BASE}{path}", method=method, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                                                                          "User-Agent": "auditbench-uplift/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             body = r.read().decode() or "{}"
