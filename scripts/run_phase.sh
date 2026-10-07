@@ -40,7 +40,7 @@ status=""
 while :; do
   sleep 60
   ensure_api
-  status=$(sky queue "$CLUSTER" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v j="$job" '$1==j {print $(NF-1)}' | head -1)
+  status=$(sky queue "$CLUSTER" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v j="$job" '$1==j {for(i=2;i<=NF;i++) if ($i ~ /^(PENDING|SETTING_UP|RUNNING|SUCCEEDED|FAILED|FAILED_SETUP|FAILED_DRIVER|CANCELLED|CANCELLING)$/) {print $i; exit}}')
   case "$status" in SUCCEEDED|FAILED|FAILED_SETUP|FAILED_DRIVER|CANCELLED) break;; esac
 done
 echo "run_phase: job $job finished with status $status $(date -u +%FT%TZ)"

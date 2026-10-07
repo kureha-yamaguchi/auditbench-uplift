@@ -69,7 +69,7 @@ if [ "${RESUME_FROM:-}" = after-pilot ]; then
   say "waiting for the running pilot job $job"
   while :; do
     sky api status >/dev/null 2>&1 || { sky api start >/dev/null 2>&1 || true; sleep 5; }
-    st=$(sky queue "$NODE" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v j="$job" '$1==j {print $(NF-1)}' | head -1)
+    st=$(sky queue "$NODE" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk -v j="$job" '$1==j {for(i=2;i<=NF;i++) if ($i ~ /^(PENDING|SETTING_UP|RUNNING|SUCCEEDED|FAILED|FAILED_SETUP|FAILED_DRIVER|CANCELLED|CANCELLING)$/) {print $i; exit}}')
     case "$st" in SUCCEEDED) break;; FAILED*|CANCELLED) fail "pilot job $job ended with $st";; esac
     sleep 60
   done
