@@ -114,7 +114,7 @@ def main() -> None:
     w.add_argument("--stop-pod", default=None, help="RunPod pod id, or 'self' to read RUNPOD_POD_ID, to stop when a cap trips (needs RUNPOD_API_KEY)")
     w.add_argument("--poll-sec", type=int, default=60)
     w.set_defaults(fn=watch)
-    s = sub.add_parser("session-start"); s.add_argument("--ledger", required=True); s.add_argument("--cap", type=float, required=True); s.set_defaults(func=session_start)
+    s = sub.add_parser("session-start"); s.add_argument("--ledger", required=True); s.add_argument("--cap", type=float, required=True); s.set_defaults(fn=session_start)
     b = sub.add_parser("iteration-budget")
     b.add_argument("--ledger", required=True)
     b.add_argument("--pilot-iterations", type=int, default=10)

@@ -111,7 +111,7 @@ PY
     [ "$PHASE" = defence ] && python scripts/select_checkpoint.py --arm defence || true ;;
   rescore)
     # Re-run the step-0 scoring of an already indexed baseline (trajectories/baseline.jsonl) after a scoring-only failure.
-    [ -f trajectories/baseline.jsonl ] || { echo "no trajectories/baseline.jsonl"; exit 1; }
+    [ -f trajectories/baseline.jsonl ] || python scripts/index_trajectories.py "$DURABLE/jobs/baseline" --name baseline --policy '{"arm":"base","step":0}'
     python scripts/score_job.py trajectories/baseline.jsonl --split dev --step 0 --arm base
     python scripts/score_job.py trajectories/baseline.jsonl --split train --step 0 --arm base ;;
   eval)

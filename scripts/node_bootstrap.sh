@@ -12,7 +12,7 @@ HT="$DURABLE/harbor-train"
 export HF_HOME="$DURABLE/hf" UV_CACHE_DIR="$DURABLE/uv-cache"
 mkdir -p "$DURABLE"/{runs,jobs,trajectories,manifests,data,hf,uv-cache,auditbench-uplift}
 SRC="${SKY_WORKDIR:-$HOME/sky_workdir}"
-[ -d "$SRC" ] && rsync -rlptD --no-owner --no-group --delete --exclude .venv --exclude .env --exclude 'tasks/test' --exclude jobs "$SRC/" "$DURABLE/auditbench-uplift/"
+[ -d "$SRC" ] && rsync -rlptD --no-owner --no-group --delete --exclude .venv --exclude .env --exclude 'tasks/test' --exclude jobs --exclude trajectories --exclude reports "$SRC/" "$DURABLE/auditbench-uplift/"   # node-generated trajectories/ and reports/ survive relaunches
 ln -sfn "$DURABLE/auditbench-uplift" ~/auditbench-uplift
 [ -n "${WANDB_API_KEY:-}" ] || { echo "WANDB_API_KEY missing in session"; exit 1; }
 
