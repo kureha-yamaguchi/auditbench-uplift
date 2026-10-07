@@ -18,17 +18,17 @@ if [ -d "$SRC" ] && [ "$(cd "$SRC" && pwd -P)" != "$(cd "$REPO" && pwd -P)" ]; t
     --exclude trajectories --exclude reports "$SRC/" "$REPO/"
 fi
 cd "$REPO"
+mkdir -p "$DURABLE/reports"
+source "$DURABLE/harbor-train/skyrl-train/.venv/bin/activate"
+export HF_HOME="$DURABLE/hf" AUDITBENCH_SANDBOX=${AUDITBENCH_SANDBOX:-modal}
 # Hourly rate for the spend ledger: the pod's actual price (the GPU ladder in configs/skypilot may have landed on a
 # cheaper type than 4xH200), else POD_RATE_USD_PER_HOUR, else the 4xH200 list price.
 RATE=${POD_RATE_USD_PER_HOUR:-}
 if [ -z "$RATE" ] && [ -n "${RUNPOD_POD_ID:-}" ]; then
-  RATE=$(python scripts/runpod_api.py status "$RUNPOD_POD_ID" | python -c 'import json,sys; v=json.load(sys.stdin).get("costPerHr"); print(v if v else "")' || true)
+  RATE=$(python3 scripts/runpod_api.py status "$RUNPOD_POD_ID" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("costPerHr"); print(v if v else "")' || true)
 fi
 RATE=${RATE:-18.36}
 echo "phase=$PHASE pod=${RUNPOD_POD_ID:-?} rate_usd_per_hour=$RATE gpu=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)"
-mkdir -p "$DURABLE/reports"
-source "$DURABLE/harbor-train/skyrl-train/.venv/bin/activate"
-export HF_HOME="$DURABLE/hf" AUDITBENCH_SANDBOX=${AUDITBENCH_SANDBOX:-modal}
 
 guard_phase=$([ "$PHASE" = smoke ] || [ "$PHASE" = baseline ] && echo setup_smoke_baseline || echo "$PHASE")
 python scripts/spend_guard.py watch --ledger "$DURABLE/spend.json" --phase "$guard_phase" --rate "$RATE" \

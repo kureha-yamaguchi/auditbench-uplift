@@ -38,6 +38,7 @@ envs:
   HF_TOKEN: ""
   MODAL_TOKEN_ID: ""
   MODAL_TOKEN_SECRET: ""
+  MODAL_ENVIRONMENT: ""                 # Modal environment the token is scoped to (see `modal environment list`)
   RUNPOD_API_KEY: ""                    # spend guard self-stop (RUNPOD_POD_ID is set by RunPod inside the pod)
   AUDITBENCH_SANDBOX: modal
 
