@@ -21,6 +21,13 @@ model cache and run state. RunPod pods cannot run nested containers, so sandboxe
 (`scripts/phase.sh`) runs under the spend guard and stops the pod when it ends. A user-set hard cap of
 **$1,500 total** replaces the open-ended budget; `scripts/spend_guard.py` meters it and derives the
 main-run iteration count from pilot timing. Affected text below is marked *(amended)*.
+**Amendment 2026-10-07 (GPU ladder).** 4×H200 Secure Cloud had no stock in any region for several hours on
+2026-10-06/07. The SkyPilot spec now carries an `ordered` ladder of 4-GPU, ≥80 GB alternatives in EU-FR-1
+(H100-SXM, H100-NVL, H100, A100-80GB) tried after H200 on every retry; the realised GPU type and hourly rate are
+recorded per phase and used by the spend guard. The inference contract and recipe are unchanged; on 80 GB GPUs
+the pilot's memory gate (§7.2) decides whether 32k context is feasible, and a shorter declared context would
+require rerunning baselines. Whichever type runs the baseline should run all arms; a mid-study change is a
+recorded deviation.
 This review inspected the local `../auditlogsbench` checkout at commit
 `369ad441f2876245d0db19990c77ccbcb74a0a3a` and primary documentation linked below. No model runs,
 cloud jobs, grader parity tests, or training pilots have been performed. Proposed settings must

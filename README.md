@@ -70,8 +70,9 @@ diagnostics are separate from `reward.json`. Upstream-convention counts come fro
 
 ## Runs (Gates C–E, SkyPilot on RunPod, Modal sandboxes)
 
-Infrastructure (amended 2026-10-05): SkyPilot launches a 4×H200 Secure Cloud node with the RunPod API key
-and attaches the persistent network volume; Modal provides the sandboxes (RunPod pods cannot run nested
+Infrastructure (amended 2026-10-05, GPU ladder 2026-10-07): SkyPilot launches a 4-GPU Secure Cloud node in EU-FR-1 with the RunPod
+API key and attaches the persistent network volume (`ordered` ladder 4×H200 → H100-SXM → H100-NVL → H100 → A100-80GB because
+4×H200 had no stock; the realised GPU and hourly rate are recorded per phase); Modal provides the sandboxes (RunPod pods cannot run nested
 containers); every phase runs under `scripts/spend_guard.py` against the $1,500 cap and stops the pod when it ends.
 
 ```bash
@@ -80,7 +81,7 @@ printf '[default]\napi_key = "%s"\n' "$RUNPOD_API_KEY" > ~/.runpod/config.toml &
 sky volumes apply --name auditbench-uplift-durable --infra runpod/FR/EU-FR-1 --type runpod-network-volume --size 300 --use-existing -y
 
 # provision + setup (idempotent; state lives on /workspace)
-sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y
+sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y --retry-until-up
 
 # phases, each self-stopping the pod at the end (sky start auditbench before the next one)
 sky exec -c auditbench --env-file .env -- bash scripts/phase.sh smoke

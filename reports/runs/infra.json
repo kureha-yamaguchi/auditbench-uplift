@@ -28,6 +28,7 @@
   "2026-10-04: W&B serverless sandboxes return 'entity not found' for this account; backend unavailable.",
   "2026-10-04: ~7.3 h of idle pod time (~$134) accrued between operator turns before bootstrap started; pod to be stopped whenever no job is running.",
   "sandbox backend decision pending: Modal tokens requested from the user; fallback is a chroot environment with no network isolation (recorded deviation).",
-  "2026-10-05: RUNPOD_API_KEY added (same account as the plugin login); used only for automatic pod stop/start via scripts/runpod_api.py"
+  "2026-10-05: RUNPOD_API_KEY added (same account as the plugin login); used only for automatic pod stop/start via scripts/runpod_api.py",
+  "2026-10-06/07: 4xH200 SECURE unavailable in EU-FR-1 for >3 h (RunPod GraphQL showed no 4xH200 secure stock in any region); SkyPilot spec switched to an `ordered` GPU ladder (H200 > H100-SXM > H100-NVL > H100 > A100-80GB-SXM), all in EU-FR-1 for the volume. Rate per phase is read from the pod (costPerHr)."
  ]
 }

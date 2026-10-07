@@ -1,17 +1,30 @@
-# SkyPilot cluster for all GPU phases on RunPod Secure Cloud 4xH200 (PLAN.md §8.1, amended 2026-10-05).
-#   sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y   # provision + setup (idempotent)
-#   sky exec   -c auditbench --env-file .env -- bash scripts/phase.sh <phase>          # run one phase (see scripts/phase.sh)
-#   sky stop   auditbench   /   sky down auditbench                                    # stop (keeps volume) / delete
-# State persists on the RunPod network volume `auditbench-uplift-durable` (adopted with `sky volumes apply --use-existing`).
-# Sandboxes are Modal (MODAL_TOKEN_* in .env); the node runs vLLM, the Harbor agent loop and the trainer.
+# SkyPilot cluster for all GPU phases on RunPod Secure Cloud (PLAN.md §8.1, amended 2026-10-05 and 2026-10-07).
+#   sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y --retry-until-up   # provision + setup
+#   sky exec   -c auditbench --env-file .env -- bash scripts/phase.sh <phase>                            # run one phase
+#   sky stop   auditbench   /   sky down auditbench                                                      # stop (keeps volume) / delete
+# State persists on the RunPod network volume `auditbench-uplift-durable` (adopted with `sky volumes apply --use-existing`),
+# which pins every candidate to EU-FR-1. Sandboxes are Modal (MODAL_TOKEN_* in .env); the node runs vLLM, the Harbor agent
+# loop and the trainer.
+#
+# GPU ladder (amendment 2026-10-07): 4xH200 had no Secure Cloud stock anywhere for >3 h, so `ordered` tries these 4-GPU
+# configurations in preference order on every retry. All have >=80 GB per GPU; the realised type is recorded by
+# scripts/record_environment.py (nvidia-smi) and the hourly rate is read from the pod by scripts/phase.sh, so the spend
+# ledger stays correct. 80 GB GPUs make the 32k-context memory gate of the pilot (PLAN.md §7.2) the deciding check;
+# a shorter declared context would require rerunning baselines. Blackwell workstation cards (RTX PRO 6000) are excluded
+# pending kernel-compatibility checks; B200 is excluded on price ($27.16/h).
 name: auditbench
 
 resources:
   infra: runpod/FR/EU-FR-1
-  instance_type: 4x_H200-SXM_SECURE     # $18.36/h list price
   disk_size: 200                        # container disk; durable state lives on the volume
   ports: [8000]                         # vLLM endpoint (loopback use only; exposed for debugging)
   image_id: docker:runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+  ordered:
+    - instance_type: 4x_H200-SXM_SECURE       # $18.36/h, 141 GB/GPU — the planned configuration
+    - instance_type: 4x_H100-SXM_SECURE       # $13.96/h,  80 GB/GPU, NVLink
+    - instance_type: 4x_H100-NVL_SECURE       # $12.76/h,  94 GB/GPU, PCIe + NVLink pairs
+    - instance_type: 4x_H100_SECURE           # $11.56/h,  80 GB/GPU, PCIe
+    - instance_type: 4x_A100-80GB-SXM_SECURE  #  $6.36/h,  80 GB/GPU, slower (no FA3/FP8); last resort
 
 volumes:
   /workspace: auditbench-uplift-durable
