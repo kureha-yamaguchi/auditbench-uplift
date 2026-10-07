@@ -36,12 +36,21 @@ sync_test_tasks() {  # wait for a complete local build (325 sealed test tasks) b
 }
 export_dir() { $SSH "find $DURABLE/runs/$1/exports -maxdepth 3 -name config.json -path '*global_step_$2*' -printf '%h\n' 2>/dev/null | head -1"; }
 
-# 0. baseline chain
-until grep -qE "baseline finished|baseline FAILED" runs_local/sky/after_launch.log 2>/dev/null; do sleep 60; done
-grep -q "baseline finished" runs_local/sky/after_launch.log || fail "baseline"
-sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up after the baseline"
-$SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
-collect; say "baseline done; session cap \$400 recorded"
+# 0. baseline: either wait for the after_launch chain, or (RESUME=1) the baseline trials are already indexed on the node's
+#    volume from the 2026-10-07 07:03 run and only the step-0 scoring failed (W&B); rescore and continue from the pilot.
+if [ "${RESUME:-0}" = 1 ]; then
+  until grep -q "is up on" runs_local/sky/ladder.log 2>/dev/null; do grep -q "non-capacity failure" runs_local/sky/ladder.log 2>/dev/null && fail "ladder"; sleep 60; done
+  sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up"
+  $SSH "test -f $NREPO/trajectories/baseline.jsonl" || fail "baseline.jsonl not on this node's volume (landed outside CA-MTL-1?)"
+  $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
+  run rescore -- rescore
+else
+  until grep -qE "baseline finished|baseline FAILED" runs_local/sky/after_launch.log 2>/dev/null; do sleep 60; done
+  grep -q "baseline finished" runs_local/sky/after_launch.log || fail "baseline"
+  sky status "$NODE" 2>/dev/null | grep -q " UP " || fail "cluster not up after the baseline"
+  $SSH "touch $DURABLE/KEEP_POD; cd $NREPO && python3 scripts/spend_guard.py session-start --ledger $DURABLE/spend.json --cap 400" || fail "session cap"
+fi
+collect; say "baseline scored; session cap \$400 recorded"
 
 # 2. pilot
 run pilot -- pilot

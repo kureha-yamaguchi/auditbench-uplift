@@ -21,6 +21,9 @@ cd "$REPO"
 mkdir -p "$DURABLE/reports"
 source "$DURABLE/harbor-train/skyrl-train/.venv/bin/activate"
 export HF_HOME="$DURABLE/hf" AUDITBENCH_SANDBOX=${AUDITBENCH_SANDBOX:-modal}
+# W&B: no writable entity for this API key (2026-10-07: "entity not found" / "permission denied" crashed scoring). Offline mode
+# keeps wandb.init/log working (local run files under wandb/) without network writes; durable records stay authoritative.
+export WANDB_MODE=${WANDB_MODE:-offline}
 # Hourly rate for the spend ledger: the pod's actual price (the GPU ladder in configs/skypilot may have landed on a
 # cheaper type than 4xH200), else POD_RATE_USD_PER_HOUR, else the 4xH200 list price.
 RATE=${POD_RATE_USD_PER_HOUR:-}
@@ -106,6 +109,11 @@ PY
     bash scripts/launch_training.sh "$CFG" "$DURABLE"
     [ "$PHASE" = pilot ] && python scripts/spend_guard.py iteration-budget --ledger "$DURABLE/spend.json" | tee "$DURABLE/reports/iteration_budget.json"
     [ "$PHASE" = defence ] && python scripts/select_checkpoint.py --arm defence || true ;;
+  rescore)
+    # Re-run the step-0 scoring of an already indexed baseline (trajectories/baseline.jsonl) after a scoring-only failure.
+    [ -f trajectories/baseline.jsonl ] || { echo "no trajectories/baseline.jsonl"; exit 1; }
+    python scripts/score_job.py trajectories/baseline.jsonl --split dev --step 0 --arm base
+    python scripts/score_job.py trajectories/baseline.jsonl --split train --step 0 --arm base ;;
   eval)
     # Standalone evaluation of a model on dev or the (authorised) test split: EVAL_SPLIT, EVAL_ARM, EVAL_STEP, optional EVAL_MODEL.
     : "${EVAL_SPLIT:?}" "${EVAL_ARM:?}" "${EVAL_STEP:?}"
