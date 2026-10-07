@@ -32,30 +32,34 @@ runpod_volume_names() {  # volumes that already exist on the RunPod account (ado
   curl -sf -H "Authorization: Bearer $key" https://rest.runpod.io/v1/networkvolumes | python3 -c 'import json,sys; print("\n".join(v["name"] for v in json.load(sys.stdin)))' 2>/dev/null || true
 }
 
-CREATED=()      # volumes created by this invocation
 USED=""         # volume of the successful launch
 cleanup() {
   # Cancel any launch request still running on the SkyPilot API server (killing the client does not).
   for id in $(sky api status 2>/dev/null | awk '/sky.launch/{print $1}'); do sky api cancel "$id" >/dev/null 2>&1 || true; done
-  for v in "${CREATED[@]:-}"; do
-    [ -n "$v" ] && [ "$v" != "$USED" ] && { echo "launch_ladder: deleting unused volume $v"; sky volumes delete "$v" -y >/dev/null 2>&1 || true; }
+  # Delete ladder volumes that have never been used by any cluster (LAST_USE "-"): they hold nothing. The EU-FR-1
+  # volume and the one the successful launch attached are always kept.
+  # columns: NAME TYPE INFRA SIZE USER WORKSPACE AGE STATUS LAST_USE USED_BY
+  sky volumes ls 2>/dev/null | awk 'NR>1 && $1 ~ /^auditbench-uplift-/ && $9 == "-" {print $1}' | while read -r v; do
+    [ "$v" = auditbench-uplift-durable ] || [ "$v" = "$USED" ] && continue
+    echo "launch_ladder: deleting never-used volume $v"; sky volumes delete "$v" -y >/dev/null 2>&1 || true
   done
 }
 trap cleanup EXIT
 
 ensure_volume() {  # $1 data centre, $2 country, $3 volume name; returns 1 if the data centre cannot host a volume
   sky volumes ls 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$3" && return 0
-  if runpod_volume_names | grep -qx "$3"; then
+  # SkyPilot names the RunPod volume "<name>-<suffix>", so match on the prefix.
+  if runpod_volume_names | grep -qE "^$3(-|$)"; then
     sky volumes apply --name "$3" --infra "runpod/$2/$1" --type runpod-network-volume --size 300 --use-existing -y >/dev/null
   else
-    echo "$(date -u +%FT%TZ) creating network volume $3 in $1 (300 GB)"
+    echo "$(date -u +%FT%TZ) creating network volume $3 in $1 (300 GB, ~\$21/month while it exists)"
     sky volumes apply --name "$3" --infra "runpod/$2/$1" --type runpod-network-volume --size 300 -y >/dev/null || true
     # `apply` can return success without RunPod creating anything (data centres without storage support).
-    if ! runpod_volume_names | grep -qx "$3"; then
+    if ! runpod_volume_names | grep -qE "^$3(-|$)"; then
       echo "$(date -u +%FT%TZ) $1 cannot host a network volume; skipping it"
+      sky volumes delete "$3" -y >/dev/null 2>&1 || true
       return 1
     fi
-    CREATED+=("$3")
   fi
 }
 
