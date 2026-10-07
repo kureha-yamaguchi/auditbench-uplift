@@ -9,7 +9,7 @@ y() { python -c "import sys,yaml; c=yaml.safe_load(open('$CFG')); print(eval('c'
 RUN_NAME=$(y "['run_name']"); ITERS=$(y "['iterations']"); PROMPTS=$(y "['prompts_per_iteration']"); SAMPLES=$(y "['samples_per_prompt']")
 TRAIN_DIR=$(eval echo "$(y "['data']['train_dir']")"); DEV_DIR=$(eval echo "$(y "['data']['dev_dir']")")
 LR=$(y "['optimizer']['lr']"); MAXLEN=$(y "['model']['max_model_len']"); EVAL_INT=$(y "['eval_interval']"); CKPT_INT=$(y "['ckpt_interval']")
-REWARD_MODE=$(y "['reward_mode']"); SEED=$(y "['seed']"); EVAL_BEFORE=$(y "get('eval_before_train', True)" | tr A-Z a-z)
+REWARD_MODE=$(y "['reward_mode']"); SEED=$(y "['seed']"); EVAL_BEFORE=$(y ".get('eval_before_train', True)" | tr A-Z a-z)
 WD=$(y "['optimizer']['weight_decay']"); BETAS=$(y "['optimizer']['betas']"); GRAD_CLIP=$(y "['optimizer']['grad_clip']")
 SCHED=$(y "['optimizer']['scheduler']"); CLIP_LO=$(y "['algorithm']['eps_clip_low']"); CLIP_HI=$(y "['algorithm']['eps_clip_high']")
 MODEL_REV=$(y "['model']['revision']")

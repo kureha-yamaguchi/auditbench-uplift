@@ -22,7 +22,10 @@ collect() {  # evaluations, selection, reports, trajectory indexes -> laptop
   rsync -az -e "ssh -o BatchMode=yes" --include='*.jsonl' --exclude='*' "$NODE:$NREPO/trajectories/" trajectories/ 2>/dev/null || true
 }
 finish_pod() { $SSH "rm -f $DURABLE/KEEP_POD $DURABLE/test_tasks -r" >/dev/null 2>&1 || true; bash scripts/pod_stop.sh || true; }
-fail() { say "FAILED: $*"; collect; finish_pod; say "pod stopped; artefacts collected"; exit 1; }
+fail() {  # keep the pod for 45 min so the watcher can fix and resume (touch runs_local/sky/HOLD to keep it longer); then stop it
+  say "FAILED: $*"; collect; rm -f runs_local/sky/HOLD
+  (sleep 2700; [ -f runs_local/sky/HOLD ] || { bash scripts/pod_stop.sh; echo "$(date -u +%FT%TZ) unattended: pod stopped after 45 min without a resume"; }) >> runs_local/sky/unattended.log 2>&1 &
+  say "pod kept up for 45 min pending a fix; artefacts collected"; exit 1; }
 run() {  # name, env assignments..., -- phase
   local name=$1; shift; local envs=(); while [ "$1" != "--" ]; do envs+=("$1"); shift; done; shift
   say "step $name: ${envs[*]} run_phase $*"
