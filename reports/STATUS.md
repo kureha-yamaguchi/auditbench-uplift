@@ -22,3 +22,12 @@ modes (restrictive host umask broke the unprivileged agent) and making `/app` ro
 (`auditbench_harbor/probe_agent.py`) on 7 dev tasks: agent uid 1000, DNS/TCP/HTTPS blocked, no private files/label strings/secrets
 visible, log immutable, reward spoof via `/logs/verifier` ineffective (separate verifier; reward 1 only on the two negative-window
 tasks where `[]` is correct). Modal does not enforce the memory limit (3 GiB allocation succeeded; accepted by the user).
+
+GPU smoke 2026-10-07 (RunPod CA-MTL-1, 4xH100-SXM $13.96/h after 4xH200 had no stock anywhere; pod rdmpf57wowh6n5, volume
+`auditbench-uplift-ca-mtl-1`): oracle 2/2 on Modal from the node; the 4-task Qwen smoke fell back to the full `baseline_job.yaml` at
+1 attempt, so all 445 train+dev tasks ran once (49 min, ~$12 pod): 401 graded, mean strict reward 0.571; 44 (10%) context exits;
+141 (32%) invalid output, of which 105 never wrote /app/findings.json (80 ended early with task_complete after concluding
+"benign", 25 hit 32 turns); positives detected 1/27 (train lm); classification 1/15 valid. p50 trial 84 s, p95 248 s; p50 4.1k
+output tokens. vLLM rejects prompt+max_tokens>32768 (no clipping) => usable context ~24.5k with max_tokens=8192; decision
+pending. Artefacts: `trajectories/smoke-qwen.jsonl` (node + local, git-ignored), `reports/runs/smoke/`. Fixes along the way:
+Modal env/tokens, `run_phase.sh` (sky exec needs --workdir and --gpus), stale Harbor job dirs, Cloudflare UA, baseline_job literals.

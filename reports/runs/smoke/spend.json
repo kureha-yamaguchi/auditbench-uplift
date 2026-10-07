@@ -1,0 +1,10 @@
+{
+ "phases": {
+  "setup_smoke_baseline": {
+   "usd": 16.594405083621872,
+   "seconds": 4260.444360494614,
+   "rate_per_hour": 18.36
+  }
+ },
+ "events": []
+}
