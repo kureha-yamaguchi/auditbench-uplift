@@ -35,7 +35,7 @@ run() {  # name, env assignments..., -- phase
 sync_test_tasks() {  # wait for a complete local build (325 sealed test tasks) before syncing; never sync a partial set
   local n=0; for _ in $(seq 1 720); do n=$(ls tasks/test 2>/dev/null | wc -l); [ "$n" -ge 325 ] && ! pgrep -f "auditbench-harbor build" >/dev/null && break; sleep 10; done
   [ "$n" -ge 325 ] || fail "tasks/test incomplete ($n/325)"
-  rsync -az --delete -e "ssh -o BatchMode=yes" tasks/test/ "$NODE:$DURABLE/test_tasks/" || fail "test task sync"
+  rsync -rlptDz --no-owner --no-group --delete -e "ssh -o BatchMode=yes" tasks/test/ "$NODE:$DURABLE/test_tasks/" || fail "test task sync"   # the network volume refuses chown
 }
 export_dir() { $SSH "find $DURABLE/runs/$1/exports -maxdepth 3 -name config.json -path '*global_step_$2*' -printf '%h\n' 2>/dev/null | head -1"; }
 
