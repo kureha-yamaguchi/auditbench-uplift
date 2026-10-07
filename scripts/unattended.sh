@@ -75,10 +75,12 @@ if [ "${RESUME_FROM:-}" = after-pilot ]; then
   done
   sky logs "$NODE" "$job" --no-follow 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > runs_local/sky/pilot.log || true
   say "pilot job $job succeeded"
+elif [ "${RESUME_FROM:-}" = pilot-done ]; then
+  say "pilot already completed (export verified by hand); continuing"
 else
   run pilot -- pilot
 fi
-[ -n "$(export_dir pilot 5)" ] || fail "pilot produced no HF export at global_step_5"
+[ "${RESUME_FROM:-}" = pilot-done ] || [ -n "$(export_dir pilot 5)" ] || fail "pilot produced no HF export at global_step_5"
 collect
 
 # 1. base model on test (evaluation only)

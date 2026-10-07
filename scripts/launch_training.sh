@@ -9,7 +9,7 @@ y() { python -c "import sys,yaml; c=yaml.safe_load(open('$CFG')); print(eval('c'
 RUN_NAME=$(y "['run_name']"); ITERS=$(y "['iterations']"); PROMPTS=$(y "['prompts_per_iteration']"); SAMPLES=$(y "['samples_per_prompt']")
 TRAIN_DIR=$(eval echo "$(y "['data']['train_dir']")"); DEV_DIR=$(eval echo "$(y "['data']['dev_dir']")")
 LR=$(y "['optimizer']['lr']"); MAXLEN=$(y "['model']['max_model_len']"); EVAL_INT=$(y "['eval_interval']"); CKPT_INT=$(y "['ckpt_interval']")
-REWARD_MODE=$(y "['reward_mode']"); SEED=$(y "['seed']"); EVAL_BEFORE=$(y ".get('eval_before_train', True)" | tr A-Z a-z)
+REWARD_MODE=$(y "['reward_mode']"); SEED=$(y "['seed']"); EVAL_BEFORE=$(y ".get('eval_before_train', True)" | tr A-Z a-z); HF_INT=$(y ".get('hf_save_interval', c['ckpt_interval'])")
 WD=$(y "['optimizer']['weight_decay']"); BETAS=$(y "['optimizer']['betas']"); GRAD_CLIP=$(y "['optimizer']['grad_clip']")
 SCHED=$(y "['optimizer']['scheduler']"); CLIP_LO=$(y "['algorithm']['eps_clip_low']"); CLIP_HI=$(y "['algorithm']['eps_clip_high']")
 MODEL_REV=$(y "['model']['revision']")
@@ -40,7 +40,7 @@ python -m examples.harbor.entrypoints.main_harbor \
   trainer.epochs=1 trainer.train_batch_size=$PROMPTS trainer.policy_mini_batch_size=$PROMPTS \
   trainer.update_epochs_per_batch=1 trainer.micro_forward_batch_size_per_gpu=1 trainer.micro_train_batch_size_per_gpu=1 \
   trainer.eval_before_train=$EVAL_BEFORE trainer.eval_interval=$EVAL_INT trainer.eval_batch_size=128 \
-  trainer.ckpt_interval=$CKPT_INT trainer.hf_save_interval=$CKPT_INT trainer.algorithm.max_seq_len=$MAXLEN \
+  trainer.ckpt_interval=$CKPT_INT trainer.hf_save_interval=$HF_INT trainer.max_ckpts_to_keep=1 trainer.algorithm.max_seq_len=$MAXLEN \
   trainer.policy.optimizer_config.lr=$LR trainer.policy.optimizer_config.weight_decay=$WD \
   trainer.policy.optimizer_config.adam_betas="$BETAS" trainer.policy.optimizer_config.max_grad_norm=$GRAD_CLIP \
   trainer.policy.optimizer_config.scheduler=$SCHED trainer.policy.optimizer_config.num_warmup_steps=0 \

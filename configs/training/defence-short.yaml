@@ -15,7 +15,7 @@ samples_per_prompt: 8
 eval_interval: 1000
 eval_before_train: false
 eval_attempts: 5
-ckpt_interval: 5
+ckpt_interval: 1000     # no mid-run resume checkpoints (92 GB each filled the 280 GB volume in the pilot); the final one is kept
 hf_save_interval: 5
 optimizer: {lr: 1.0e-6, betas: [0.9, 0.999], eps: 1.0e-8, weight_decay: 0.0, grad_clip: 1.0, scheduler: constant}
 algorithm:
