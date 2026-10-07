@@ -83,7 +83,10 @@ def _stop_pod(pod_id: str) -> None:
 
 
 def session_start(args) -> None:
-    d = load(Path(args.ledger)); d["session"] = {"start_total": total(d), "cap": args.cap, "t": time.time()}; save(Path(args.ledger), d)
+    d = load(Path(args.ledger))
+    if d.get("session"):   # idempotent: a resumed orchestrator must not reset the session ceiling
+        print(json.dumps(d["session"])); return
+    d["session"] = {"start_total": total(d), "cap": args.cap, "t": time.time()}; save(Path(args.ledger), d)
     print(json.dumps(d["session"]))
 
 
