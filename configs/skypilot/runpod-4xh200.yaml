@@ -1,6 +1,6 @@
 # SkyPilot cluster for all GPU phases on RunPod Secure Cloud (PLAN.md §8.1, amended 2026-10-05 and 2026-10-07).
 #   sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y --retry-until-up   # provision + setup
-#   sky exec   -c auditbench --env-file .env -- bash scripts/phase.sh <phase>                            # run one phase
+#   sky exec   -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh <phase>                            # run one phase
 #   sky stop   auditbench   /   sky down auditbench                                                      # stop (keeps volume) / delete
 # State persists on the RunPod network volume `auditbench-uplift-durable` (adopted with `sky volumes apply --use-existing`),
 # which pins every candidate to EU-FR-1. Sandboxes are Modal (MODAL_TOKEN_* in .env); the node runs vLLM, the Harbor agent
@@ -48,4 +48,4 @@ setup: |
   bash scripts/node_bootstrap.sh
 
 run: |
-  echo "cluster ready; run phases with: sky exec -c auditbench --env-file .env -- bash scripts/phase.sh <phase>"
+  echo "cluster ready; run phases with: sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh <phase>"

@@ -84,12 +84,14 @@ sky volumes apply --name auditbench-uplift-durable --infra runpod/FR/EU-FR-1 --t
 sky launch -c auditbench configs/skypilot/runpod-4xh200.yaml --env-file .env -y --retry-until-up
 bash scripts/launch_ladder.sh      # or: GPU ladder x data-centre ladder (creates a volume per new DC on demand) until a node is free
 
-# phases, each self-stopping the pod at the end (sky start auditbench before the next one)
-sky exec -c auditbench --env-file .env -- bash scripts/phase.sh smoke
-sky exec -c auditbench --env-file .env -- bash scripts/phase.sh baseline
-sky exec -c auditbench --env-file .env -- bash scripts/phase.sh pilot      # writes /workspace/auditbench/reports/iteration_budget.json
-sky exec -c auditbench --env-file .env -- bash scripts/phase.sh defence
-sky exec -c auditbench --env-file .env -- bash scripts/phase.sh control
+# phases (`--workdir .` re-syncs the repo; a bare `sky exec` command syncs nothing). Each phase stops the pod at the end unless
+# KEEP_POD=1; on RunPod a stopped pod may not get its GPUs back, so chain phases with KEEP_POD=1 when capacity is scarce.
+# Modal needs MODAL_TOKEN_ID/SECRET and MODAL_ENVIRONMENT in .env (see `modal environment list`).
+sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh smoke
+sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh baseline
+sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh pilot      # writes /workspace/auditbench/reports/iteration_budget.json
+sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh defence
+sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh control
 
 # results back, selection and export (local)
 rsync -az "$(sky status --ip auditbench)":/workspace/auditbench/reports/ reports/runs/
