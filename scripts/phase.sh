@@ -43,7 +43,11 @@ finish() {
 trap finish EXIT
 
 vllm_up() {
-  pgrep -f "vllm.entrypoints.openai.api_server" >/dev/null && return
+  if pgrep -f "vllm.entrypoints.openai.api_server" >/dev/null; then
+    curl -sf localhost:8000/v1/models >/dev/null && return
+    echo "stale vLLM processes without a healthy endpoint; restarting"; pkill -f "vllm.entrypoints.openai.api_server" || true; sleep 5
+  fi
+  [ "$(nvidia-smi -L 2>/dev/null | wc -l)" -ge 4 ] || { echo "phase needs 4 visible GPUs (run via scripts/run_phase.sh, which passes --gpus)"; nvidia-smi -L; exit 1; }
   nohup python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
     --served-model-name Qwen3-8B --tensor-parallel-size 1 --data-parallel-size 4 --max-model-len 32768 \
     --chat-template "$DURABLE/harbor-train/skyrl-train/skyrl_train/utils/templates/qwen3_acc_thinking.jinja2" \

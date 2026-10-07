@@ -87,11 +87,11 @@ bash scripts/launch_ladder.sh      # or: GPU ladder x data-centre ladder (create
 # phases (`--workdir .` re-syncs the repo; a bare `sky exec` command syncs nothing). Each phase stops the pod at the end unless
 # KEEP_POD=1; on RunPod a stopped pod may not get its GPUs back, so chain phases with KEEP_POD=1 when capacity is scarce.
 # Modal needs MODAL_TOKEN_ID/SECRET and MODAL_ENVIRONMENT in .env (see `modal environment list`).
-sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh smoke
-sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh baseline
-sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh pilot      # writes /workspace/auditbench/reports/iteration_budget.json
-sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh defence
-sky exec -c auditbench --workdir . --env-file .env -- bash scripts/phase.sh control
+bash scripts/run_phase.sh smoke
+bash scripts/run_phase.sh baseline
+bash scripts/run_phase.sh pilot      # writes /workspace/auditbench/reports/iteration_budget.json
+bash scripts/run_phase.sh defence
+bash scripts/run_phase.sh control
 
 # results back, selection and export (local)
 rsync -az "$(sky status --ip auditbench)":/workspace/auditbench/reports/ reports/runs/
