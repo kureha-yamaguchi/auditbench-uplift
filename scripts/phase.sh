@@ -23,7 +23,7 @@ source "$DURABLE/harbor-train/skyrl-train/.venv/bin/activate"
 export HF_HOME="$DURABLE/hf" AUDITBENCH_SANDBOX=${AUDITBENCH_SANDBOX:-modal}
 # W&B: no writable entity for this API key (2026-10-07: "entity not found" / "permission denied" crashed scoring). Offline mode
 # keeps wandb.init/log working (local run files under wandb/) without network writes; durable records stay authoritative.
-export WANDB_MODE=${WANDB_MODE:-offline}
+export WANDB_MODE=${WANDB_MODE:-online}   # entity ky295 (verified writable 2026-10-08); set offline if W&B is unreachable
 # Hourly rate for the spend ledger: the pod's actual price (the GPU ladder in configs/skypilot may have landed on a
 # cheaper type than 4xH200), else POD_RATE_USD_PER_HOUR, else the 4xH200 list price.
 RATE=${POD_RATE_USD_PER_HOUR:-}
@@ -33,7 +33,7 @@ fi
 RATE=${RATE:-18.36}
 echo "phase=$PHASE pod=${RUNPOD_POD_ID:-?} rate_usd_per_hour=$RATE gpu=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)"
 
-case "$PHASE" in smoke|baseline) guard_phase=setup_smoke_baseline;; eval) guard_phase=eval;; defence-short) guard_phase=defence;; *) guard_phase=$PHASE;; esac
+case "$PHASE" in smoke|baseline) guard_phase=setup_smoke_baseline;; eval) guard_phase=eval;; defence-short|defence-main) guard_phase=defence;; *) guard_phase=$PHASE;; esac
 python scripts/spend_guard.py watch --ledger "$DURABLE/spend.json" --phase "$guard_phase" --rate "$RATE" \
   --stop-file "$DURABLE/STOP" --stop-cmd "pkill -f harbor; pkill -f main_harbor; pkill -f vllm" --stop-pod self \
   > "$DURABLE/spend_guard.$PHASE.log" 2>&1 &
@@ -104,12 +104,19 @@ PY
     python scripts/index_trajectories.py "$DURABLE/jobs/baseline" --name baseline --policy '{"arm":"base","step":0}'
     python scripts/score_job.py trajectories/baseline.jsonl --split dev --step 0 --arm base
     python scripts/score_job.py trajectories/baseline.jsonl --split train --step 0 --arm base ;;
-  pilot|defence|control|defence-short)
+  pilot|defence|control|defence-short|defence-main)
     pkill -f "^[^ ]*python[^ ]* -m vllm.entrypoints" || true   # the trainer owns the GPUs
     CFG=${TRAIN_CONFIG:-configs/training/$PHASE.yaml}
     mkdir -p ~/data/auditbench && ln -sfn "$REPO/tasks/dev" ~/data/auditbench/dev
     python scripts/make_sampling_manifest.py --config "$CFG" --materialise
+    RUN_NAME=$(python -c "import yaml,sys; print(yaml.safe_load(open(sys.argv[1]))['run_name'])" "$CFG")
+    # Convert fp32 HF exports to bf16 as they appear (31 GB -> 16 GB; the pilot filled the volume); runs on CPU alongside training.
+    mkdir -p "$DURABLE/runs/$RUN_NAME/exports"
+    nohup python scripts/export_bf16.py "$DURABLE/runs/$RUN_NAME/exports" > "$DURABLE/runs/$RUN_NAME/export_bf16.log" 2>&1 &
+    BF16_WATCHER=$!
     bash scripts/launch_training.sh "$CFG" "$DURABLE"
+    kill "$BF16_WATCHER" 2>/dev/null || true
+    python scripts/export_bf16.py "$DURABLE/runs/$RUN_NAME/exports" --once --min-age 10 >> "$DURABLE/runs/$RUN_NAME/export_bf16.log" 2>&1 || true
     [ "$PHASE" = pilot ] && python scripts/spend_guard.py iteration-budget --ledger "$DURABLE/spend.json" | tee "$DURABLE/reports/iteration_budget.json"
     [ "$PHASE" = defence ] && python scripts/select_checkpoint.py --arm defence || true ;;
   rescore)

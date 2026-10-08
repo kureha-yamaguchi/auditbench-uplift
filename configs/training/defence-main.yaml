@@ -1,0 +1,34 @@
+# Main defence run (PLAN §7.3), user instruction 2026-10-08: full training on 4xH200, everything logged to W&B (ky295).
+# T_max = 65 from the §8.2 rule with the pilot's measured ~20 min/iteration and the $475 defence bucket. In-loop dev eval every
+# 5 steps (W&B); §5.3 selection from standalone evaluations of the exports at every 10th step and the final step.
+# Main defence run (PLAN.md §7.1, §7.3). Consumed by scripts/launch_training.sh as Hydra overrides.
+run_name: defence-seed1-main
+arm: defence
+seed: 1
+data:
+  train_manifest: manifests/sampling/defence-seed1.jsonl   # iterations x prompts i.i.d. draws from the balanced sampler
+  train_dir: ~/data/auditbench/defence-seed1              # materialised symlink dataset (one entry per draw)
+  dev_dir: ~/data/auditbench/dev
+iterations: 65                      # hard cap; the manifest has exactly iterations*prompts entries and epochs=1
+prompts_per_iteration: 32
+samples_per_prompt: 8
+eval_interval: 5
+eval_attempts: 5
+ckpt_interval: 10         # rolling resume checkpoint (max_ckpts_to_keep=1 in launch_training.sh)
+hf_save_interval: 5
+optimizer: {lr: 1.0e-6, betas: [0.9, 0.999], eps: 1.0e-8, weight_decay: 0.0, grad_clip: 1.0, scheduler: constant}
+algorithm:
+  advantage_estimator: grpo
+  grpo_norm_by_std: false            # centred advantages, no std normalisation
+  use_kl_loss: false
+  loss_reduction: seq_mean_token_sum_norm
+  eps_clip_low: 0.2
+  eps_clip_high: 0.2
+  update_epochs_per_batch: 1
+  dynamic_sampling: off
+  apply_overlong_filtering: true     # overlong trajectories are excluded from gradients but still count as failures
+model: {path: Qwen/Qwen3-8B, revision: b968826d9c46dd6066d109eabc6255188de91218, max_model_len: 32768}
+strategy: fsdp2
+reward_mode: strict                  # or dense (pilot contingency only; never switched mid-run)
+caps: {max_rollouts: 16640, max_gpu_hours: 30, max_usd: 475}   # 65 it = min(100, floor($475 / ~$7 per iteration incl. evals on 4xH200)
+resume_mode: none                    # never resume from pilot state

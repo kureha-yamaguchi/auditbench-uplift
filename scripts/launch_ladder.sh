@@ -11,7 +11,7 @@
 # A failure that is not a capacity failure stops the loop; if a pod exists by then it is stopped (billing off).
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-SPEC="$REPO/configs/skypilot/runpod-4xh200.yaml"
+SPEC="${SPEC:-$REPO/configs/skypilot/runpod-4xh200.yaml}"
 GEN="$REPO/runs_local/sky/generated"; mkdir -p "$GEN"
 # Only data centres with network-volume support (RunPod GraphQL dataCenters.storageSupport, checked 2026-10-07) that
 # listed H200/H100 stock; the existing EU-FR-1 volume goes first.
