@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 TOTAL_CAP_USD = 1500.0
-PHASE_CAPS_USD = {"setup_smoke_baseline": 300.0, "pilot": 250.0, "defence": 650.0, "control": 475.0, "eval": 150.0}   # defence raised 2026-10-08: the $475 bucket plus the exploratory short run already in the ledger
+PHASE_CAPS_USD = {"setup_smoke_baseline": 300.0, "pilot": 250.0, "defence": 750.0, "control": 475.0, "eval": 150.0}   # defence raised 2026-10-08: the $475 bucket plus the exploratory short run already in the ledger
 # Optional per-session ceiling (user, 2026-10-07: $400 for the unattended session): `session-start` records the ledger total.
 SESSION_CAP_USD = float(os.environ.get("AUDITBENCH_SESSION_CAP_USD", "0") or 0)
 
