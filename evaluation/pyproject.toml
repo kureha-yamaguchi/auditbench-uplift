@@ -1,0 +1,8 @@
+[project]
+name = "auditbench-uplift-evaluation"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["shared-cyber-evals[cloud]==0.1.0"]
+
+[tool.uv.sources]
+shared-cyber-evals = { path = "../../shared-cyber-evals/dist/shared_cyber_evals-0.1.0-py3-none-any.whl" }

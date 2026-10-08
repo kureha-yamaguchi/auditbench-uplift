@@ -1,0 +1,12 @@
+{
+  "schema": "shared-cyber-evals/study-v1",
+  "study": "uplift",
+  "models": [
+    {"label": "base", "source": "Qwen/Qwen3-8B", "revision": "b968826d9c46dd6066d109eabc6255188de91218"}
+  ],
+  "checkpoint_handoff": {"index": "../auditbench-uplift/checkpoints/index.json", "status": "requires_complete_inference_export", "note": "Supply the selected exported checkpoint with --model. Never substitute the base checkpoint for a missing trained export."},
+  "benchmarks": ["auditbench", "cybergym", "exploitgym", "excytin"],
+  "auditbench_selector": {"kind": "frozen_split", "split": "test", "uplift_root": "../auditbench-uplift"},
+  "sampling": {"temperature": 0.7, "top_p": 1.0, "max_tokens": 8192, "context_tokens": 32768, "reasoning_effort": "high", "repetitions": 1, "base_seed": 1234},
+  "comparison_notes": ["All uplift arms use the frozen AuditBench test selector before any prompt construction or inference.", "AuditBench-Agent training diagnostics remain separate historical measurements."]
+}
