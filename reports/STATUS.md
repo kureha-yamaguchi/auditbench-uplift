@@ -46,3 +46,13 @@ checkpoints + two 31 GB fp32 HF exports); the step-5 export was verified complet
 to make room for the defence run (deviation from the §8.3 retention rule, forced by capacity). Pilot config: 5 of the permitted
 <=10 iterations (unattended-session time limit). Defence-short: 10 iterations, no mid-run resume checkpoints, exports at 5/10,
 selection from standalone dev evaluations of each export.
+
+Unattended session result 2026-10-08 (user authorisation 2026-10-07): defence-short run (10 GRPO iterations, pod dh7q2j8xb1shpz,
+4xH100-SXM, 21:13-01:37 UTC, 0 masked groups, batch mean reward 0.25-0.41, pass@8 0.50-0.78); standalone dev evaluations of the
+exports: step 5 D 0.395 (FA 0.031, V 0.792), step 10 D 0.407 (FA 0.050, V 0.831) vs base 0.367 (FA 0.032, V 0.744) -> §5.3 selects
+step 10 (eligible; manipulation check +0.10 NOT met; `reports/selection-defence.json`). Sealed test (325 tasks x 5 attempts,
+Stage-2 evaluation, no tuning): base D 0.295 (FA 0.026, V 0.775, 36 context exits) vs defence-selected step 10 D 0.350 (FA 0.017,
+V 0.832, 15 context exits); per task P/N base -> defence: classification 0.00/0.02 -> 0.00/0.07, lm 0.00/0.69 -> 0.00/0.80,
+persistence 0.02/0.83 -> 0.12/0.86, exfiltration 0.00/0.80 -> 0.08/0.88. Control arm not run (time). Artefacts:
+`reports/evaluations/*.json`, trajectories on the CA-MTL-1 volume (`/workspace/auditbench/jobs`, `runs/defence-seed1-short/exports/
+global_step_{5,10}` + final resume checkpoint). Pod stopped 04:02 UTC.

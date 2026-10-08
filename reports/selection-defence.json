@@ -1,0 +1,27 @@
+{
+ "selected_step": 10,
+ "selected_D": 0.40728009259259257,
+ "base_D": 0.36663194444444447,
+ "manipulation_check_passed": false,
+ "log": [
+  {
+   "step": 0,
+   "D": 0.36663194444444447,
+   "eligible": true,
+   "reasons": []
+  },
+  {
+   "step": 5,
+   "D": 0.39544560185185185,
+   "eligible": true,
+   "reasons": []
+  },
+  {
+   "step": 10,
+   "D": 0.40728009259259257,
+   "eligible": true,
+   "reasons": []
+  }
+ ],
+ "early_stop_triggered": false
+}
