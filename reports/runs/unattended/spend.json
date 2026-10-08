@@ -1,0 +1,30 @@
+{
+ "phases": {
+  "setup_smoke_baseline": {
+   "usd": 49.404372865735155,
+   "seconds": 12721.467570781708,
+   "rate_per_hour": 18.36
+  },
+  "pilot": {
+   "usd": 37.46497368576792,
+   "seconds": 9661.454532146454,
+   "rate_per_hour": 13.96
+  },
+  "eval": {
+   "usd": 21.641272614627415,
+   "seconds": 5580.843940734863,
+   "rate_per_hour": 13.96
+  },
+  "defence": {
+   "usd": 61.2003191204124,
+   "seconds": 15782.317251682281,
+   "rate_per_hour": 13.96
+  }
+ },
+ "events": [],
+ "session": {
+  "start_total": 49.404392967883744,
+  "cap": 400.0,
+  "t": 1791389550.9983504
+ }
+}

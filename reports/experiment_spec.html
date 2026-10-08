@@ -1,0 +1,625 @@
+<title>AuditBench Uplift Spec</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (72ch) with full-bleed figures; every figure is one claim, captioned. */
+:root {
+  --bg: #f6f7f5;
+  --panel: #ffffff;
+  --fg: #1b2228;
+  --muted: #5a6670;
+  --line: #cfd6db;
+  --accent: #0e7a84;      /* the one hue that carries meaning: the defence arm / the path under discussion */
+  --accent-soft: #d9eef0;
+  --sealed: #b4570a;      /* sealed test split, never touched in Stage 1 */
+  --sealed-soft: #f7e6d3;
+  --good: #2f7d4a;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191d; --panel: #1d2329; --fg: #e4e8eb; --muted: #9aa6b0; --line: #343d45;
+    --accent: #5cc4cd; --accent-soft: #163a3e; --sealed: #e39a4f; --sealed-soft: #3d2a14; --good: #6cc48a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191d; --panel: #1d2329; --fg: #e4e8eb; --muted: #9aa6b0; --line: #343d45;
+  --accent: #5cc4cd; --accent-soft: #163a3e; --sealed: #e39a4f; --sealed-soft: #3d2a14; --good: #6cc48a;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15.5px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; }
+header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 32px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 30px; font-weight: 600; line-height: 1.2; margin: 8px 0 12px; text-wrap: balance; }
+h2 { font-size: 21px; font-weight: 600; margin: 48px 0 12px; text-wrap: balance; }
+h3 { font-size: 16px; font-weight: 600; margin: 24px 0 8px; }
+p { max-width: 72ch; margin: 0 0 12px; }
+.lede { font-size: 17px; color: var(--fg); max-width: 72ch; }
+ul { max-width: 72ch; padding-left: 20px; margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); padding: 1px 5px; border-radius: 3px; }
+figure { margin: 20px 0 28px; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.scroll { overflow-x: auto; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; max-width: 80ch; }
+figcaption b { color: var(--fg); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 12px 0 20px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 12px 0 20px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.panel h3 { margin-top: 0; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.pill.done { color: var(--good); border-color: var(--good); }
+.pill.next { color: var(--accent); border-color: var(--accent); }
+.pill.sealed { color: var(--sealed); border-color: var(--sealed); }
+.budget { display: flex; width: 100%; height: 44px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); margin: 12px 0 6px; }
+.budget div { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12.5px; color: var(--fg); border-right: 1px solid var(--bg); min-width: 0; white-space: nowrap; }
+.budget .b1 { background: var(--accent-soft); }
+.budget .b2 { background: var(--accent-soft); filter: saturate(1.4); }
+.budget .b3 { background: var(--accent); color: #fff; }
+.budget .b4 { background: var(--panel); }
+.legend { font-size: 13px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+.formula { font-family: var(--font-mono); font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; margin: 12px 0 16px; overflow-x: auto; white-space: pre; }
+.callout { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--panel); margin: 16px 0 20px; max-width: 80ch; }
+.callout.warn { border-left-color: var(--sealed); }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; margin-top: 14px; }
+.toc a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+.toc a:hover, .toc a:focus-visible { border-bottom-color: var(--accent); outline: none; }
+a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Experiment specification · Stage 1 · status 2026-10-07</div>
+  <h1>Does defensive RL on audit-log investigation improve defence, and does it transfer to offence?</h1>
+  <p class="lede">One starting checkpoint, two trained arms, one sealed test set. This page is the Stage 1 design in pictures: what the data is, what a task looks like, how reward is computed, how training runs, how a checkpoint is picked, and what it costs. The prose authority is <code>PLAN.md</code> and <code>PREREG.md</code> in the repository.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#arms">1 Arms</a><a href="#data">2 Data</a><a href="#task">3 Task</a><a href="#reward">4 Reward</a><a href="#loop">5 Training loop</a><a href="#select">6 Selection</a><a href="#infra">7 Infrastructure</a><a href="#budget">8 Budget</a><a href="#gates">9 Gates and status</a><a href="#limits">10 Limits</a>
+  </nav>
+</header>
+
+<h2 id="arms">1. Three arms, two contrasts</h2>
+<p>Everything starts from the same pinned Qwen3-8B revision. The defence arm trains on AuditBench investigation tasks. The control arm uses the identical recipe on non-security terminal tasks, so that generic "learning to use a terminal" is separated from learning to investigate logs. Each trained arm exports a dev-selected checkpoint (S) and its terminal checkpoint (T). Stage 2, which is out of scope here, evaluates all of them before and after.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 330" role="img" aria-label="The base checkpoint feeds two trained arms, defence and control, each exporting a selected and a terminal checkpoint; all five models go to the Stage 2 evaluations, and the two reported contrasts are defence minus base and defence minus control." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    <marker id="a1c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <!-- base -->
+  <rect x="20" y="130" width="170" height="70" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="158" text-anchor="middle" font-weight="600">Base: Qwen3-8B</text>
+  <text x="105" y="176" text-anchor="middle" font-size="11.5" fill="var(--muted)">pinned revision b968826 · step 0</text>
+  <!-- arrows to arms -->
+  <path d="M190 150 C 250 150, 260 80, 320 80" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#a1c)"/>
+  <path d="M190 180 C 250 180, 260 250, 320 250" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+  <text x="250" y="60" text-anchor="middle" font-size="11.5" fill="var(--muted)">same weights, same recipe</text>
+  <!-- defence arm -->
+  <rect x="322" y="40" width="240" height="80" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.8"/>
+  <text x="442" y="64" text-anchor="middle" font-weight="600">Defence arm</text>
+  <text x="442" y="82" text-anchor="middle" font-size="11.5">online GRPO on AuditBench train</text>
+  <text x="442" y="98" text-anchor="middle" font-size="11.5">balanced sampler · strict reward</text>
+  <!-- control arm -->
+  <rect x="322" y="210" width="240" height="80" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="442" y="234" text-anchor="middle" font-weight="600">Control arm</text>
+  <text x="442" y="252" text-anchor="middle" font-size="11.5">online GRPO on OpenThoughts-TB-dev</text>
+  <text x="442" y="268" text-anchor="middle" font-size="11.5">62 screened non-security tasks · trained to T</text>
+  <!-- exports -->
+  <path d="M562 65 L 620 65" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#a1c)"/>
+  <path d="M562 95 L 620 95" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#a1c)"/>
+  <rect x="622" y="50" width="130" height="28" rx="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.4"/>
+  <text x="687" y="69" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">defence-selected-S</text>
+  <rect x="622" y="82" width="130" height="28" rx="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.4"/>
+  <text x="687" y="101" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">defence-final-T</text>
+  <path d="M562 235 L 620 235" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+  <path d="M562 265 L 620 265" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+  <rect x="622" y="220" width="130" height="28" rx="4" fill="var(--panel)" stroke="currentColor" stroke-width="1.2"/>
+  <text x="687" y="239" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">control-S</text>
+  <rect x="622" y="252" width="130" height="28" rx="4" fill="var(--panel)" stroke="currentColor" stroke-width="1.2"/>
+  <text x="687" y="271" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">control-T</text>
+  <!-- stage 2 -->
+  <rect x="800" y="40" width="140" height="250" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="870" y="64" text-anchor="middle" font-weight="600">Stage 2 evals</text>
+  <text x="870" y="80" text-anchor="middle" font-size="11" fill="var(--muted)">(out of scope here)</text>
+  <text x="870" y="118" text-anchor="middle" font-size="11.5">AuditBench-Agent test</text>
+  <text x="870" y="134" text-anchor="middle" font-size="11" fill="var(--sealed)">sealed · 325 units</text>
+  <text x="870" y="166" text-anchor="middle" font-size="11.5">CyberGym</text>
+  <text x="870" y="196" text-anchor="middle" font-size="11.5">ExploitBench</text>
+  <text x="870" y="226" text-anchor="middle" font-size="11.5">ExCyTIn-Bench</text>
+  <path d="M752 64 L 798 64" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+  <path d="M752 96 L 798 96" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+  <path d="M752 234 L 798 234" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+  <path d="M752 266 L 798 266" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+  <path d="M105 200 L 105 310 L 798 310" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+  <text x="450" y="304" text-anchor="middle" font-size="11.5" fill="var(--muted)">base is evaluated unchanged</text>
+</svg>
+</div>
+<figcaption><b>Figure 1.</b> One checkpoint, two treatments. The reported contrasts are <span class="mono">M(defence) − M(base)</span> and <span class="mono">M(defence) − M(control)</span> for every Stage 2 metric. One training seed per arm is exploratory; three paired seeds are the recommended extension.</figcaption>
+</figure>
+
+<h2 id="data">2. Data: files become provenance groups, groups become splits</h2>
+<p>AuditBench ships 129 log files from two sources: Lab (Linux and Windows audit logs, edge and raw views) and OpTC (edge view). Many files are copies, re-views or windows of the same attack run, so files are not independent. The split is therefore done on provenance groups: files linked by identical content, a shared scenario key, the same host on the same day, or a window overlap are one group, and a group goes to exactly one split.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 300" role="img" aria-label="129 files collapse to 40 provenance groups, which are allocated 18 train, 7 dev and 15 test; these expand to 367, 78 and 325 canonical task units, with test sealed, and only train and dev are built into 445 Harbor tasks." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <!-- stage 1: files -->
+  <rect x="20" y="40" width="150" height="76" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="95" y="66" text-anchor="middle" font-weight="600">129 log files</text>
+  <text x="95" y="84" text-anchor="middle" font-size="11.5" fill="var(--muted)">Lab 55 · OpTC 41 (+33 clf)</text>
+  <text x="95" y="100" text-anchor="middle" font-size="11.5" fill="var(--muted)">commit 369ad441</text>
+  <path d="M170 78 L 218 78" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+  <text x="194" y="68" text-anchor="middle" font-size="10.5" fill="var(--muted)">link</text>
+  <!-- stage 2: groups -->
+  <rect x="220" y="40" width="170" height="76" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="305" y="66" text-anchor="middle" font-weight="600">40 provenance groups</text>
+  <text x="305" y="84" text-anchor="middle" font-size="11.5" fill="var(--muted)">strong edges only: identical content,</text>
+  <text x="305" y="100" text-anchor="middle" font-size="11.5" fill="var(--muted)">scenario key, host+day, window overlap</text>
+  <path d="M390 78 L 438 78" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+  <text x="414" y="68" text-anchor="middle" font-size="10.5" fill="var(--muted)">allocate</text>
+  <!-- stage 3: split bar by groups (18/7/15 of 40 => 45% / 17.5% / 37.5% of 480px) -->
+  <text x="440" y="32" font-size="11.5" fill="var(--muted)">Groups (seed 20261003, target 50/10/40, constrained)</text>
+  <rect x="440" y="44" width="216" height="34" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.4"/>
+  <rect x="656" y="44" width="84" height="34" fill="var(--panel)" stroke="currentColor" stroke-width="1.2"/>
+  <rect x="740" y="44" width="180" height="34" fill="var(--sealed-soft)" stroke="var(--sealed)" stroke-width="1.4"/>
+  <text x="548" y="66" text-anchor="middle" font-weight="600">train 18</text>
+  <text x="698" y="66" text-anchor="middle" font-weight="600">dev 7</text>
+  <text x="830" y="66" text-anchor="middle" font-weight="600" fill="var(--sealed)">test 15</text>
+  <!-- units bar: 367/78/325 of 770 => 229 / 49 / 203 of 480 -->
+  <text x="440" y="110" font-size="11.5" fill="var(--muted)">Canonical units (400-line edge / 1,000-line raw windows; whole files for classification)</text>
+  <rect x="440" y="120" width="229" height="34" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.4"/>
+  <rect x="669" y="120" width="49" height="34" fill="var(--panel)" stroke="currentColor" stroke-width="1.2"/>
+  <rect x="718" y="120" width="202" height="34" fill="var(--sealed-soft)" stroke="var(--sealed)" stroke-width="1.4"/>
+  <text x="554" y="142" text-anchor="middle" font-weight="600">367</text>
+  <text x="693" y="142" text-anchor="middle" font-weight="600">78</text>
+  <text x="819" y="142" text-anchor="middle" font-weight="600" fill="var(--sealed)">325 · sealed</text>
+  <path d="M548 78 L 554 118" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M698 78 L 693 118" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M830 78 L 819 118" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+  <!-- built tasks -->
+  <path d="M554 154 L 554 196" fill="none" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#a2)"/>
+  <path d="M693 154 L 693 196" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+  <rect x="440" y="198" width="320" height="60" rx="6" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.6"/>
+  <text x="600" y="222" text-anchor="middle" font-weight="600">445 Harbor tasks built (train 367 + dev 78)</text>
+  <text x="600" y="241" text-anchor="middle" font-size="11.5" fill="var(--muted)">schema ok · no leakage · oracle 445/445</text>
+  <!-- sealed note -->
+  <rect x="780" y="198" width="140" height="60" rx="6" fill="none" stroke="var(--sealed)" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="850" y="222" text-anchor="middle" font-weight="600" fill="var(--sealed)">never built</text>
+  <text x="850" y="241" text-anchor="middle" font-size="11" fill="var(--muted)">needs --allow-test + env var</text>
+  <!-- roles -->
+  <text x="554" y="282" text-anchor="middle" font-size="11.5" fill="var(--muted)">gradients + baseline</text>
+  <text x="693" y="282" text-anchor="middle" font-size="11.5" fill="var(--muted)">selection only, never trained on</text>
+  <text x="850" y="282" text-anchor="middle" font-size="11.5" fill="var(--muted)">Stage 2 only</text>
+</svg>
+</div>
+<figcaption><b>Figure 2.</b> Dev exceeds its 10% target because the feasibility constraints bind: every task needs at least two independent positive and two benign groups in dev, and two positive groups in train. That deviation is recorded in <code>splits/README.md</code>.</figcaption>
+</figure>
+
+<div class="grid2">
+  <div class="panel">
+    <h3>Four task types</h3>
+    <table>
+      <tr><th>Task</th><th>Unit</th><th>Finding entity</th></tr>
+      <tr><td>Lateral movement (lm)</td><td>window</td><td>external host</td></tr>
+      <tr><td>Persistence</td><td>window</td><td>technique (canonical list)</td></tr>
+      <tr><td>Exfiltration</td><td>window</td><td>file path</td></tr>
+      <tr><td>Classification</td><td>whole file</td><td>one verdict object</td></tr>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>Label audit (train / dev)</h3>
+    <p>Every train and dev target is <code>supported_positive</code>: its annotation maps to concrete log records by timestamp precision and entity. Ten targets in train, thirteen in dev. One annotation is unplaced (no concrete entity). Test holds five ambiguous OpTC hosts that Stage 1 never inspects.</p>
+    <p>Sign-off 2026-10-06 was a blanket accept by the investigator, not an itemised review. That is recorded in <code>manifests/label_review.meta.json</code>.</p>
+  </div>
+</div>
+
+<h2 id="task">3. What one task looks like</h2>
+<p>The agent never sees the log in its prompt. It gets a terminal in a sandbox with the log as a read-only file, searches it with <code>rg</code>, <code>jq</code> and Python, and writes its findings as a JSON file. Grading happens in a second container that receives only that file. Model calls go to a vLLM server outside the sandbox.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 340" role="img" aria-label="The policy server outside the sandbox exchanges prompts and commands with the Terminus-2 agent loop; the agent container holds a read-only audit log and a writable findings file; only the findings file is copied into a separate verifier container, which compares it to the private ground truth and emits a reward of zero or one plus separate diagnostics." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+  <marker id="a3c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+  <!-- policy server -->
+  <rect x="20" y="90" width="190" height="120" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="115" y="116" text-anchor="middle" font-weight="600">Policy (vLLM, on the node)</text>
+  <text x="115" y="136" text-anchor="middle" font-size="11.5" fill="var(--muted)">Qwen3-8B · thinking on</text>
+  <text x="115" y="152" text-anchor="middle" font-size="11.5" fill="var(--muted)">T=1.0 · top-p 1.0 · 32k context</text>
+  <text x="115" y="168" text-anchor="middle" font-size="11.5" fill="var(--muted)">≤ 8,192 tokens per completion</text>
+  <text x="115" y="192" text-anchor="middle" font-size="11" fill="var(--muted)">outside every sandbox</text>
+  <!-- agent loop arrows -->
+  <path d="M210 130 L 300 130" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a3)"/>
+  <text x="255" y="122" text-anchor="middle" font-size="10.5" fill="var(--muted)">command</text>
+  <path d="M300 170 L 210 170" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a3)"/>
+  <text x="255" y="188" text-anchor="middle" font-size="10.5" fill="var(--muted)">output ≤ 10,000 B</text>
+  <!-- agent container -->
+  <rect x="302" y="40" width="300" height="230" rx="8" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.8"/>
+  <text x="452" y="64" text-anchor="middle" font-weight="600">Agent container (Modal)</text>
+  <text x="452" y="82" text-anchor="middle" font-size="11.5" fill="var(--muted)">no network · uid 1000 · 1 CPU · 1 GiB · fresh per attempt</text>
+  <rect x="322" y="100" width="260" height="38" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="332" y="116" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">/app/audit.log</text>
+  <text x="332" y="131" font-size="11" fill="var(--muted)">read-only · one canonical window or whole file</text>
+  <rect x="322" y="148" width="260" height="38" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="332" y="164" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">rg · jq · python3</text>
+  <text x="332" y="179" font-size="11" fill="var(--muted)">Terminus-2 loop · ≤ 32 turns · ≤ 1,200 s</text>
+  <rect x="322" y="196" width="260" height="38" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2"/>
+  <text x="332" y="212" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">/app/findings.json</text>
+  <text x="332" y="227" font-size="11" fill="var(--muted)">JSON array · the only artefact that leaves</text>
+  <text x="452" y="256" text-anchor="middle" font-size="11" fill="var(--muted)">no labels, filenames, scenario ids or grader inside</text>
+  <!-- copy arrow -->
+  <path d="M602 215 L 690 215" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3c)"/>
+  <text x="646" y="206" text-anchor="middle" font-size="10.5" fill="var(--muted)">copy ≤ 256 KiB</text>
+  <!-- verifier -->
+  <rect x="692" y="40" width="248" height="230" rx="8" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="816" y="64" text-anchor="middle" font-weight="600">Verifier container</text>
+  <text x="816" y="82" text-anchor="middle" font-size="11.5" fill="var(--muted)">separate · built from tests/ · immutable</text>
+  <rect x="712" y="100" width="208" height="38" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="722" y="116" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">tests/ground_truth.json</text>
+  <text x="722" y="131" font-size="11" fill="var(--muted)">private target manifest</text>
+  <rect x="712" y="148" width="208" height="38" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="722" y="164" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">grader v1 (stdlib only)</text>
+  <text x="722" y="179" font-size="11" fill="var(--muted)">schema → matching → reward</text>
+  <rect x="712" y="196" width="208" height="38" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2"/>
+  <text x="722" y="212" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">reward.json {"reward": 0|1}</text>
+  <text x="722" y="227" font-size="11" fill="var(--muted)">diagnostics kept in a separate file</text>
+  <!-- reward out -->
+  <path d="M816 270 L 816 300" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3c)"/>
+  <text x="816" y="322" text-anchor="middle" font-size="11.5">to the trainer (and the trajectory record)</text>
+  <text x="452" y="300" text-anchor="middle" font-size="11.5" fill="var(--muted)">Isolation probed 2026-10-06: DNS/TCP/HTTPS blocked, log immutable, reward spoof via /logs ineffective</text>
+</svg>
+</div>
+<figcaption><b>Figure 3.</b> The sandbox boundary is what makes the reward trustworthy. The agent cannot read the answer key, cannot alter the grader, and cannot reach the network. The verifier never executes agent output; it parses one bounded file.</figcaption>
+</figure>
+
+<h3>Frozen inference contract</h3>
+<p>Any change to these values requires rerunning every affected baseline. Source: <code>configs/inference_contract.yaml</code>.</p>
+<table>
+  <tr><th>Setting</th><th>Value</th><th>Why it is fixed</th></tr>
+  <tr><td>Model</td><td class="mono">Qwen/Qwen3-8B @ b968826</td><td>same weights start every arm</td></tr>
+  <tr><td>Agent</td><td class="mono">terminus-2, json parser</td><td>same tool interface for baseline, training and dev eval</td></tr>
+  <tr><td>Turns / time per attempt</td><td class="mono">≤ 32 turns, ≤ 1,200 s</td><td>exhaustion is a policy failure (reward 0), not an infra error</td></tr>
+  <tr><td>Context</td><td class="mono">32,768 tokens; 8,192 per completion</td><td>vLLM clips the completion to remaining context; usable prompt ≈ 24.5k</td></tr>
+  <tr><td>Sampling</td><td class="mono">T 1.0, top-p 1.0, top-k off, no penalties</td><td>an RL recipe choice, not Qwen's recommended defaults</td></tr>
+  <tr><td>Thinking</td><td class="mono">on, retained across turns</td><td>template <span class="mono">qwen3_acc_thinking.jinja2</span> on server and trainer</td></tr>
+  <tr><td>Tool output cap</td><td class="mono">10,000 bytes per call</td><td>Terminus-2 built-in; full output stays in the sandbox</td></tr>
+  <tr><td>Attempts</td><td class="mono">5 per task for baseline and dev eval</td><td>seed = base + 1000·attempt + unit; base differs per phase</td></tr>
+</table>
+
+<h2 id="reward">4. Reward: binary, strict, evidence-grounded</h2>
+<p>A trajectory earns 1 only when it reports every supported target and nothing else at high confidence. Partial detection and tolerated false alerts are both scored 0, so the policy cannot climb by over-reporting or by learning the grader's leniency. The original benchmark's counting is kept as a separate compatibility metric and never used as reward.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 330" role="img" aria-label="The findings file is first validated; invalid output scores zero. Valid output branches by task type: classification needs exactly one verdict that is HIGH_SUSPICIOUS if and only if the file is an attack; an investigation with targets needs every target matched once and no unmatched high-confidence finding; an investigation with no targets needs no high-confidence finding. Each branch yields one or zero." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <!-- input -->
+  <rect x="20" y="130" width="130" height="50" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="85" y="152" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">findings.json</text>
+  <text x="85" y="168" text-anchor="middle" font-size="11" fill="var(--muted)">bytes from the agent</text>
+  <path d="M150 155 L 188 155" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <!-- validity -->
+  <rect x="190" y="110" width="180" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="280" y="132" text-anchor="middle" font-weight="600">Valid?</text>
+  <text x="280" y="150" text-anchor="middle" font-size="11" fill="var(--muted)">JSON array · ≤ 32 findings · ≤ 256 KiB</text>
+  <text x="280" y="165" text-anchor="middle" font-size="11" fill="var(--muted)">required fields · one entity per finding</text>
+  <text x="280" y="180" text-anchor="middle" font-size="11" fill="var(--muted)">source_lines exist · no duplicates · no NaN</text>
+  <path d="M280 200 L 280 262" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <text x="296" y="236" font-size="11" fill="var(--muted)">no</text>
+  <rect x="230" y="264" width="100" height="36" rx="18" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="280" y="287" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-weight="500">R = 0</text>
+  <path d="M370 155 L 418 155" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <text x="394" y="146" text-anchor="middle" font-size="11" fill="var(--muted)">yes</text>
+  <!-- branch node -->
+  <rect x="420" y="130" width="110" height="50" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="475" y="152" text-anchor="middle" font-weight="600">Task type</text>
+  <text x="475" y="168" text-anchor="middle" font-size="11" fill="var(--muted)">from ground truth</text>
+  <!-- three branches -->
+  <path d="M530 145 C 570 145, 570 50, 608 50" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M530 155 L 608 155" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M530 165 C 570 165, 570 260, 608 260" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <rect x="610" y="20" width="230" height="62" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="725" y="40" text-anchor="middle" font-weight="600">Classification (whole file)</text>
+  <text x="725" y="57" text-anchor="middle" font-size="11" fill="var(--muted)">exactly one verdict object</text>
+  <text x="725" y="72" text-anchor="middle" font-size="11" fill="var(--muted)">HIGH_SUSPICIOUS ⇔ attack file</text>
+  <rect x="610" y="124" width="230" height="62" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+  <text x="725" y="144" text-anchor="middle" font-weight="600">Investigation, targets G ≠ ∅</text>
+  <text x="725" y="161" text-anchor="middle" font-size="11">every target matched once: TP = |G|</text>
+  <text x="725" y="176" text-anchor="middle" font-size="11">no unmatched HIGH finding: FP = 0</text>
+  <rect x="610" y="230" width="230" height="62" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="725" y="250" text-anchor="middle" font-weight="600">Investigation, no targets</text>
+  <text x="725" y="267" text-anchor="middle" font-size="11" fill="var(--muted)">no HIGH finding at all</text>
+  <text x="725" y="282" text-anchor="middle" font-size="11" fill="var(--muted)">[] is a valid, correct answer</text>
+  <!-- outputs -->
+  <path d="M840 51 L 878 51" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M840 155 L 878 155" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M840 261 L 878 261" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a4)"/>
+  <rect x="880" y="33" width="60" height="36" rx="18" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="910" y="56" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">1 / 0</text>
+  <rect x="880" y="137" width="60" height="36" rx="18" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="910" y="160" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">1 / 0</text>
+  <rect x="880" y="243" width="60" height="36" rx="18" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="910" y="266" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">1 / 0</text>
+  <text x="725" y="318" text-anchor="middle" font-size="11.5" fill="var(--muted)">LOW and MEDIUM findings are not positives and never count as FP, but must still validate</text>
+</svg>
+</div>
+<figcaption><b>Figure 4.</b> Matching is frozen: timestamp at annotation precision plus the entity (host, technique or path) with explicit aliases, and the cited <span class="mono">source_lines</span> must substantiate it. Listing every technique, or several hosts in one field, is schema-invalid. No fuzzy matching is added after seeing model errors.</figcaption>
+</figure>
+
+<div class="callout">
+<p><b>Pilot-only contingency.</b> If fewer than 10% of at least 50 sampled positive train prompt-groups show any reward variance, one predefined dense alternative may be compared in the pilot: <span class="mono">R = (TP/|G|) / (1 + FP)</span> for positive investigation, binary elsewhere. One recipe is then frozen and the main run restarts from original weights. Rewards are never changed mid-run.</p>
+</div>
+
+<h2 id="loop">5. The training loop</h2>
+<p>Online GRPO with fresh rollouts every iteration. Step 1 baseline trajectories are diagnostic data only, never a replay buffer. A balanced sampler decides which tasks are drawn: task type uniformly, then positive versus negative with probability one half, then a provenance group uniformly, so long files and repeated benign views cannot dominate by count.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 400" role="img" aria-label="One GRPO iteration as a cycle: the balanced sampler draws 32 prompts, eight rollouts each run in fresh sandboxes against a frozen policy snapshot, the verifier grades each as zero or one, advantages are centred within each group of eight, a clipped policy-ratio update is applied on assistant tokens only, and weights are synced back to the inference server. Every fifth iteration branches to a dev evaluation with five attempts and a checkpoint." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+  <marker id="a5c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+  <!-- top row -->
+  <rect x="20" y="40" width="210" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="125" y="62" text-anchor="middle" font-weight="600">1 · Balanced sampler</text>
+  <text x="125" y="80" text-anchor="middle" font-size="11" fill="var(--muted)">task uniform → pos/neg ½ → group uniform</text>
+  <text x="125" y="95" text-anchor="middle" font-size="11" fill="var(--muted)">→ representation → window</text>
+  <text x="125" y="115" text-anchor="middle" font-size="11.5">32 prompts per iteration</text>
+  <path d="M230 85 L 288 85" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <rect x="290" y="40" width="230" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="405" y="62" text-anchor="middle" font-weight="600">2 · Rollouts</text>
+  <text x="405" y="80" text-anchor="middle" font-size="11" fill="var(--muted)">8 independent trajectories per prompt</text>
+  <text x="405" y="95" text-anchor="middle" font-size="11" fill="var(--muted)">frozen policy snapshot · fresh sandbox each</text>
+  <text x="405" y="115" text-anchor="middle" font-size="11.5">256 rollouts, concurrency 16–32</text>
+  <path d="M520 85 L 578 85" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <rect x="580" y="40" width="190" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="675" y="62" text-anchor="middle" font-weight="600">3 · Grade</text>
+  <text x="675" y="80" text-anchor="middle" font-size="11" fill="var(--muted)">separate verifier (Figure 3)</text>
+  <text x="675" y="95" text-anchor="middle" font-size="11" fill="var(--muted)">timeouts and overlong → R = 0</text>
+  <text x="675" y="115" text-anchor="middle" font-size="11.5">R ∈ {0, 1} per trajectory</text>
+  <!-- down -->
+  <path d="M675 130 L 675 188" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <!-- bottom row (right to left) -->
+  <rect x="580" y="190" width="190" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="675" y="212" text-anchor="middle" font-weight="600">4 · Advantages</text>
+  <text x="675" y="232" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11.5">A_i = R_i − mean(R_group)</text>
+  <text x="675" y="250" text-anchor="middle" font-size="11" fill="var(--muted)">no std normalisation</text>
+  <text x="675" y="265" text-anchor="middle" font-size="11" fill="var(--muted)">all-equal group → A = 0, still counted</text>
+  <path d="M580 235 L 522 235" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <rect x="290" y="190" width="230" height="90" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+  <text x="405" y="212" text-anchor="middle" font-weight="600">5 · Policy update</text>
+  <text x="405" y="230" text-anchor="middle" font-size="11">clipped ratio loss, ε = 0.2, one epoch</text>
+  <text x="405" y="245" text-anchor="middle" font-size="11">lr 1e-6 · no KL · full BF16 · FSDP2 · 4 GPUs</text>
+  <text x="405" y="265" text-anchor="middle" font-size="11">loss on assistant tokens only (thinking + commands)</text>
+  <path d="M290 235 L 232 235" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <rect x="20" y="190" width="210" height="90" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="125" y="212" text-anchor="middle" font-weight="600">6 · Weight sync</text>
+  <text x="125" y="232" text-anchor="middle" font-size="11" fill="var(--muted)">trainer → inference engine</text>
+  <text x="125" y="247" text-anchor="middle" font-size="11" fill="var(--muted)">before the next rollout batch</text>
+  <text x="125" y="265" text-anchor="middle" font-size="11.5">iteration i → i + 1</text>
+  <path d="M125 190 L 125 132" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+  <!-- eval branch -->
+  <path d="M405 280 L 405 318" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#a5c)"/>
+  <text x="420" y="304" font-size="11" fill="var(--muted)">every 5 iterations, and at step 0</text>
+  <rect x="200" y="320" width="410" height="62" rx="6" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.6"/>
+  <text x="405" y="342" text-anchor="middle" font-weight="600">Dev evaluation + checkpoint</text>
+  <text x="405" y="360" text-anchor="middle" font-size="11" fill="var(--muted)">78 dev tasks × 5 attempts, fixed seed schedule · weights saved atomically before the step is selectable</text>
+  <text x="405" y="375" text-anchor="middle" font-size="11" fill="var(--muted)">dev traces never enter gradients</text>
+  <!-- cap note -->
+  <text x="840" y="212" font-weight="600" font-size="12">Hard caps</text>
+  <text x="840" y="230" font-size="11.5">≤ 100 iterations (manifest length, epochs = 1)</text>
+  <text x="840" y="246" font-size="11.5">rollout / GPU-hour / USD caps</text>
+  <text x="840" y="262" font-size="11.5" fill="var(--muted)">values set from pilot timing</text>
+  <text x="840" y="290" font-weight="600" font-size="12">Pause and inspect</text>
+  <text x="840" y="308" font-size="11.5">> 20% policy exhaustion ×2 batches</text>
+  <text x="840" y="324" font-size="11.5">> 5% infrastructure errors</text>
+  <text x="840" y="340" font-size="11.5">3 batches with no advantage variation</text>
+</svg>
+</div>
+<figcaption><b>Figure 5.</b> Dynamic sampling is off: zero-advantage groups are recorded by task and class, not resampled. An infrastructure failure masks the whole prompt-group and it is recollected under the same snapshot. A policy failure (timeout, 32 turns, invalid output) is a 0 that trains.</figcaption>
+</figure>
+
+<div class="grid2">
+  <div class="panel">
+    <h3>Recipe (defence and control, identical)</h3>
+    <table>
+      <tr><td>Prompts × samples</td><td class="num mono">32 × 8</td></tr>
+      <tr><td>Learning rate</td><td class="num mono">1e-6, constant</td></tr>
+      <tr><td>Advantage</td><td class="num mono">GRPO, centred, no std</td></tr>
+      <tr><td>Clip ε</td><td class="num mono">0.2 / 0.2</td></tr>
+      <tr><td>KL penalty</td><td class="num mono">none</td></tr>
+      <tr><td>Update epochs per batch</td><td class="num mono">1</td></tr>
+      <tr><td>Precision / parallelism</td><td class="num mono">BF16, FSDP2</td></tr>
+      <tr><td>Max iterations</td><td class="num mono">100</td></tr>
+      <tr><td>Dev eval / checkpoint</td><td class="num mono">every 5 iterations</td></tr>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>Pilot first (≤ 10 iterations)</h3>
+    <p>Before the main run, one pilot must show: pinned configs accept every field, loss masks cover only assistant tokens, sampler and trainer logprobs agree on identical prefixes, synthetic groups give the expected advantage signs, a resume and an export reload reproduce the live policy, and resource peaks fit. It also measures time per iteration, which sets the iteration cap under the budget.</p>
+    <p>Pilot weights, optimiser and RNG are discarded. The main run starts again from original weights in a new directory.</p>
+  </div>
+</div>
+
+<h2 id="select">6. Picking a checkpoint and stopping</h2>
+<p>Training reward cannot answer the manipulation check, because a policy that learns to report nothing scores well on negative tasks. Selection therefore uses a balanced dev score that rewards false-positive-free recall on positive groups and clean output on negative groups, with false-alert and validity constraints relative to step 0.</p>
+
+<div class="formula">P_t = mean per positive group of false-positive-free target recall     (classification: sensitivity)
+N_t = mean per negative group of valid clean-output rate               (classification: specificity)
+D   = mean over the four tasks of (P_t + N_t) / 2
+
+eligible(step)  ⇔  F ≤ F_base + 0.02   and   V ≥ V_base − 0.01
+                   F = negative-task high-confidence alert rate,  V = output validity
+S = argmax D over eligible steps, ties to the earlier step, step 0 included
+manipulation check passed  ⇔  D_S − D_0 ≥ 0.10 with improved positive recall</div>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 250" role="img" aria-label="Illustrative timeline of a defence run: dev score D is measured at step 0 and every five iterations; the selected checkpoint S is the eligible step with the highest D; after four consecutive evaluations without a 0.01 improvement the run stops at terminal step T; the control arm is then trained to the same T." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <!-- axis: x = 60 + step*8  (0..100 -> 60..860) ; y: D from 0.3 (y=170) to 0.7 (y=50): y = 170 - (D-0.3)*300 -->
+  <line x1="60" y1="170" x2="880" y2="170" stroke="currentColor" stroke-width="1.2" marker-end="url(#a6)"/>
+  <text x="890" y="174" font-size="11" fill="var(--muted)">iteration</text>
+  <line x1="60" y1="170" x2="60" y2="40" stroke="currentColor" stroke-width="1.2"/>
+  <text x="52" y="44" text-anchor="end" font-size="11" fill="var(--muted)">D</text>
+  <!-- ticks every 5 -->
+  <g stroke="currentColor" stroke-width="1" fill="currentColor" font-size="10.5">
+    <line x1="60" y1="170" x2="60" y2="176"/><text x="60" y="190" text-anchor="middle" stroke="none">0</text>
+    <line x1="100" y1="170" x2="100" y2="176"/>
+    <line x1="140" y1="170" x2="140" y2="176"/><text x="140" y="190" text-anchor="middle" stroke="none">10</text>
+    <line x1="180" y1="170" x2="180" y2="176"/>
+    <line x1="220" y1="170" x2="220" y2="176"/><text x="220" y="190" text-anchor="middle" stroke="none">20</text>
+    <line x1="260" y1="170" x2="260" y2="176"/>
+    <line x1="300" y1="170" x2="300" y2="176"/><text x="300" y="190" text-anchor="middle" stroke="none">30</text>
+    <line x1="340" y1="170" x2="340" y2="176"/>
+    <line x1="380" y1="170" x2="380" y2="176"/><text x="380" y="190" text-anchor="middle" stroke="none">40</text>
+    <line x1="420" y1="170" x2="420" y2="176"/>
+    <line x1="460" y1="170" x2="460" y2="176"/><text x="460" y="190" text-anchor="middle" stroke="none">50</text>
+    <line x1="500" y1="170" x2="500" y2="176"/>
+    <line x1="540" y1="170" x2="540" y2="176"/><text x="540" y="190" text-anchor="middle" stroke="none">60</text>
+    <line x1="860" y1="170" x2="860" y2="176"/><text x="860" y="190" text-anchor="middle" stroke="none">100</text>
+  </g>
+  <text x="700" y="190" text-anchor="middle" font-size="10.5" fill="var(--muted)">… hard cap</text>
+  <!-- D_0 reference line at D=0.40 => y=140 -->
+  <line x1="60" y1="140" x2="540" y2="140" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="66" y="134" font-size="10.5" fill="var(--muted)">D at step 0 (base)</text>
+  <!-- illustrative polyline: steps 0..55, D values -->
+  <polyline points="60,140 100,133 140,120 180,110 220,98 260,92 300,86 340,79 380,84 420,80 460,88 500,82 540,85" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <g fill="var(--accent)">
+    <circle cx="60" cy="140" r="3.5"/><circle cx="100" cy="133" r="3.5"/><circle cx="140" cy="120" r="3.5"/><circle cx="180" cy="110" r="3.5"/>
+    <circle cx="220" cy="98" r="3.5"/><circle cx="260" cy="92" r="3.5"/><circle cx="300" cy="86" r="3.5"/>
+    <circle cx="380" cy="84" r="3.5"/><circle cx="420" cy="80" r="3.5"/><circle cx="460" cy="88" r="3.5"/><circle cx="500" cy="82" r="3.5"/><circle cx="540" cy="85" r="3.5"/>
+  </g>
+  <!-- S -->
+  <circle cx="340" cy="79" r="7" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <line x1="340" y1="72" x2="340" y2="52" stroke="var(--accent)" stroke-width="1.2"/>
+  <text x="340" y="46" text-anchor="middle" font-weight="600" fill="var(--accent)">S = 35: best eligible D</text>
+  <!-- ineligible example at step 50 -->
+  <circle cx="460" cy="88" r="7" fill="none" stroke="var(--sealed)" stroke-width="1.6" stroke-dasharray="2 2"/>
+  <text x="460" y="112" text-anchor="middle" font-size="10.5" fill="var(--sealed)">ineligible: F > F_base + 0.02</text>
+  <!-- stop window -->
+  <rect x="380" y="60" width="160" height="110" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="460" y="150" text-anchor="middle" font-size="10.5" fill="var(--muted)">4 evals without +0.01 → stop</text>
+  <!-- T -->
+  <line x1="540" y1="85" x2="540" y2="52" stroke="currentColor" stroke-width="1.2"/>
+  <text x="548" y="46" font-weight="600">T = 55: terminal</text>
+  <text x="548" y="62" font-size="10.5" fill="var(--muted)">control trained to T too</text>
+  <!-- legend / illustrative -->
+  <text x="60" y="228" font-size="11" fill="var(--muted)">Illustrative curve only. Each point is a dev evaluation of 78 tasks × 5 attempts. Exports: defence-selected-S, defence-final-T, and every evaluated weight set.</text>
+</svg>
+</div>
+<figcaption><b>Figure 6.</b> If no step beats step 0, step 0 is selected and the manipulation is reported as failed, but the terminal checkpoint is still exported so Stage 2 can measure what training did. Early stopping is a compute heuristic, not a significance test.</figcaption>
+</figure>
+
+<h2 id="infra">7. Where things run</h2>
+<p>A laptop drives everything through SkyPilot. The GPU node holds the policy server and the trainer. Sandboxes live on Modal because RunPod pods cannot run nested containers. State that must survive the pod lives on a network volume. Every phase runs under a spend guard and stops the pod when it finishes, because idle pod time was the dominant leak.</p>
+
+<figure>
+<div class="scroll">
+<svg viewBox="0 0 960 360" role="img" aria-label="The operator laptop launches and executes phases on a four-GPU RunPod node through SkyPilot; the node runs the vLLM policy server, the SkyRL trainer and harbor-train, and mounts a persistent network volume; the node drives agent and verifier sandboxes on Modal and reports metrics to Weights and Biases; a spend guard meters the 1,500 dollar cap and stops the pod at the end of each phase." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="currentColor">
+  <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <!-- laptop -->
+  <rect x="20" y="120" width="170" height="110" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="144" text-anchor="middle" font-weight="600">Operator laptop</text>
+  <text x="105" y="164" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11">sky launch / sky exec</text>
+  <text x="105" y="180" text-anchor="middle" font-family="IBM Plex Mono, Menlo, monospace" font-size="11">scripts/run_phase.sh</text>
+  <text x="105" y="200" text-anchor="middle" font-size="11" fill="var(--muted)">data pipeline, selection,</text>
+  <text x="105" y="214" text-anchor="middle" font-size="11" fill="var(--muted)">export, reports</text>
+  <path d="M190 160 L 258 160" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a7)"/>
+  <text x="224" y="150" text-anchor="middle" font-size="10.5" fill="var(--muted)">--workdir, .env</text>
+  <path d="M258 195 L 190 195" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a7)"/>
+  <text x="224" y="212" text-anchor="middle" font-size="10.5" fill="var(--muted)">rsync reports/</text>
+  <!-- node -->
+  <rect x="260" y="40" width="400" height="280" rx="8" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.8"/>
+  <text x="460" y="64" text-anchor="middle" font-weight="600">RunPod Secure Cloud node · EU-FR-1 (or ladder DC)</text>
+  <text x="460" y="82" text-anchor="middle" font-size="11" fill="var(--muted)">4 GPUs, ladder: H200 → H100-SXM → H100-NVL → H100 → A100-80GB</text>
+  <rect x="280" y="100" width="170" height="60" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="365" y="122" text-anchor="middle" font-size="12" font-weight="500">vLLM policy server</text>
+  <text x="365" y="140" text-anchor="middle" font-size="11" fill="var(--muted)">Qwen3-8B · OpenAI-compatible</text>
+  <rect x="470" y="100" width="170" height="60" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="555" y="122" text-anchor="middle" font-size="12" font-weight="500">SkyRL trainer (FSDP2)</text>
+  <text x="555" y="140" text-anchor="middle" font-size="11" fill="var(--muted)">harbor-train 9310ef6 + patch</text>
+  <path d="M450 130 L 468 130" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a7)"/>
+  <path d="M470 145 L 452 145" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a7)"/>
+  <rect x="280" y="176" width="360" height="56" rx="4" fill="var(--bg)" stroke="currentColor" stroke-width="1"/>
+  <text x="460" y="196" text-anchor="middle" font-size="12" font-weight="500">Network volume /workspace (300 GB, persists across pods)</text>
+  <text x="460" y="214" text-anchor="middle" font-size="11" fill="var(--muted)">venv · model cache · checkpoints · trajectories · run state</text>
+  <rect x="280" y="248" width="360" height="56" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2"/>
+  <text x="460" y="268" text-anchor="middle" font-size="12" font-weight="500">scripts/phase.sh + spend_guard.py</text>
+  <text x="460" y="286" text-anchor="middle" font-size="11">meters $ against the cap at the pod's real rate · stops the pod when the phase ends</text>
+  <!-- modal -->
+  <path d="M660 130 L 728 130" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a7)"/>
+  <text x="694" y="120" text-anchor="middle" font-size="10.5" fill="var(--muted)">sandboxes</text>
+  <path d="M728 150 L 660 150" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a7)"/>
+  <text x="694" y="166" text-anchor="middle" font-size="10.5" fill="var(--muted)">reward.json</text>
+  <rect x="730" y="90" width="210" height="100" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="835" y="114" text-anchor="middle" font-weight="600">Modal</text>
+  <text x="835" y="134" text-anchor="middle" font-size="11" fill="var(--muted)">agent + verifier containers</text>
+  <text x="835" y="150" text-anchor="middle" font-size="11" fill="var(--muted)">no-network · 1 CPU · 1 GiB</text>
+  <text x="835" y="170" text-anchor="middle" font-size="11" fill="var(--muted)">billed per core-second and GiB-second</text>
+  <!-- wandb -->
+  <path d="M660 260 L 728 260" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#a7)"/>
+  <text x="694" y="250" text-anchor="middle" font-size="10.5" fill="var(--muted)">metrics</text>
+  <rect x="730" y="220" width="210" height="80" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="835" y="244" text-anchor="middle" font-weight="600">Weights &amp; Biases</text>
+  <text x="835" y="264" text-anchor="middle" font-size="11" fill="var(--muted)">trainer curves · dev score tables</text>
+  <text x="835" y="280" text-anchor="middle" font-size="11" fill="var(--muted)">frozen data-manifest artifact</text>
+  <text x="460" y="346" text-anchor="middle" font-size="11" fill="var(--muted)">Secrets reach the node only via --env-file; never into configs, logs or sandboxes. Test tasks are never on the node.</text>
+</svg>
+</div>
+<figcaption><b>Figure 7.</b> The node is disposable; the volume is not. A stopped RunPod pod may not get its GPUs back, so phases are chained with the pod kept up when capacity is scarce. Whichever GPU type runs the baseline must run every arm.</figcaption>
+</figure>
+
+<h2 id="budget">8. Budget: a hard $1,500 cap</h2>
+<p>The cap replaces the open-ended plan. After the pilot, the main-run iteration count is <span class="mono">T_max = min(100, floor(per-arm budget / measured cost per iteration))</span>, and control trains to the defence terminal step within its own share.</p>
+<div class="budget" role="img" aria-label="Budget split: 300 dollars for setup, smoke and baseline; 250 for the pilot; 475 for the defence run; 475 for the control run.">
+  <div class="b1" style="flex: 300">setup + baseline $300</div>
+  <div class="b2" style="flex: 250">pilot $250</div>
+  <div class="b3" style="flex: 475">defence $475</div>
+  <div class="b4" style="flex: 475">control $475</div>
+</div>
+<div class="legend"><span>Spent before any job: ≈ $175 idle pod time on 2026-10-04 (hence the per-phase self-stop)</span><span>Smoke 2026-10-07: ≈ $12</span></div>
+
+<table>
+  <tr><th>Driver</th><th>Formula</th><th>Sensitivity</th></tr>
+  <tr><td>Baseline rollouts</td><td class="mono">5 × (367 + 78 + control)</td><td>fixed once the contract freezes</td></tr>
+  <tr><td>Training rollouts</td><td class="mono">256 × (I_pilot + I_defence + I_control)</td><td>210 iterations would be 53,760 rollouts; the cap will not permit that at plausible iteration times</td></tr>
+  <tr><td>Dev evaluations</td><td class="mono">5 × 78 × evaluations</td><td>21 evaluations per arm ≈ 8,190 rollouts</td></tr>
+  <tr><td>GPU</td><td class="mono">4 × rate × hours</td><td>$13.96–18.36/h observed; 15–35 min per iteration</td></tr>
+  <tr><td>Sandboxes</td><td class="mono">core-s + GiB-s at Modal rates</td><td>≈ $0.17 per sandbox-hour nominal; lifetime dominates</td></tr>
+</table>
+
+<h2 id="gates">9. Gates and where things stand</h2>
+<table>
+  <tr><th>Gate</th><th>Deliverable</th><th>Proceed only when</th><th>State (2026-10-07)</th></tr>
+  <tr><td><b>A</b> data</td><td>inventory, provenance graph, label audit, locked splits</td><td>leakage checks pass; dev coverage adequate</td><td><span class="pill done">done</span> labels signed off 2026-10-06</td></tr>
+  <tr><td><b>B</b> environment</td><td>task builder, strict and compat scorers, isolation</td><td>oracle passes, grader differential matches upstream, isolation holds</td><td><span class="pill done">done</span> 445/445 oracle, 4/4 compat, Modal isolation probed</td></tr>
+  <tr><td><b>C</b> step 1</td><td>Qwen smoke, 5-attempt baseline (train + dev + control), trajectory archive</td><td>records reconstruct; positive detections and reward variation exist</td><td><span class="pill next">smoke done, baseline next</span></td></tr>
+  <tr><td><b>D</b> pilot</td><td>≤ 10 iterations, resume/export checks, resource report</td><td>correct training path, feasible recipe, bounded budget, frozen PREREG</td><td><span class="pill">tooling ready</span></td></tr>
+  <tr><td><b>E</b> step 2</td><td>defence and control runs, S and T exports, training report</td><td>deviations recorded, exports load, backups verified</td><td><span class="pill">tooling ready</span></td></tr>
+</table>
+
+<div class="callout warn">
+<p><b>What the 2026-10-07 smoke run said.</b> All 445 train and dev tasks ran once on the real Qwen3-8B path through Modal. Mean strict reward was 0.571, almost entirely from negative tasks: positives were detected in 1 of 27, and classification produced a valid answer in 1 of 15. A third of trials gave invalid output, mostly because the agent concluded "benign" and ended without writing <code>findings.json</code>; a tenth ran out of context. The instruction template now carries an explicit required-output paragraph, so the baseline and all arms use amended tasks and the smoke trajectories are not comparable to them. Whether positive-task reward variance is sufficient for GRPO is exactly what the baseline and pilot gates test.</p>
+</div>
+
+<h2 id="limits">10. What this design can and cannot claim</h2>
+<ul>
+  <li><b>Experimental unit is the provenance group</b>, not the window or the attempt. Paired bootstrap intervals resample groups with all their views and attempts together. With 18 train and 7 dev groups, precision is limited.</li>
+  <li><b>One seed per arm is exploratory.</b> Intervals are conditional on that run; they do not estimate training-seed variation.</li>
+  <li><b>The control matches declared budgets, not compute.</b> Actual updates, tokens, rollouts and time are logged for both arms; equal iterations is the convention.</li>
+  <li><b>A null offence difference is not evidence of no uplift</b> without adequate precision and a predeclared equivalence margin, which Stage 2 sets before results are opened.</li>
+  <li><b>AuditBench-Agent is an adaptation.</b> Whole-file classification and terminal-mediated log access differ from the paper's protocol; its scores are not paper-reproduction scores.</li>
+  <li><b>Labels are closed-world.</b> A window without an annotated target is not proof of benign activity. Unmatched findings count as false positives regardless.</li>
+  <li><b>Host-held-out and template-held-out generalisation are not established</b> by this split; Lab Linux scenarios share one host.</li>
+</ul>
+<p>Pilot outcomes that must be written into <code>PREREG.md</code> before it freezes: the reward-variance rule outcome, 32k versus 64k context, the realised observation cap in tokens, the logprob consistency tolerance, resource peaks, failure rates, and the rollout, GPU-hour and dollar caps.</p>
+</div>

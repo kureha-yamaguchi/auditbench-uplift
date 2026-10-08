@@ -1,0 +1,75 @@
+{
+ "per_task": {
+  "classification": {
+   "P": 0.0,
+   "N": 0.016666666666666666,
+   "false_alert_rate": 0.0,
+   "validity": 0.05,
+   "ordinary_recall": null,
+   "natural_mean_reward": 0.016666666666666666,
+   "n_positive_groups": 3,
+   "n_negative_groups": 6
+  },
+  "lm": {
+   "P": 0.0,
+   "N": 0.6910789871504157,
+   "false_alert_rate": 0.03520786092214664,
+   "validity": 0.7365384615384616,
+   "ordinary_recall": 0.0,
+   "natural_mean_reward": 0.6692307692307692,
+   "n_positive_groups": 3,
+   "n_negative_groups": 7
+  },
+  "persistence": {
+   "P": 0.020833333333333332,
+   "N": 0.8297751322751323,
+   "false_alert_rate": 0.042151675485008824,
+   "validity": 0.8622222222222222,
+   "ordinary_recall": 0.020833333333333332,
+   "natural_mean_reward": 0.7733333333333333,
+   "n_positive_groups": 3,
+   "n_negative_groups": 6
+  },
+  "exfiltration": {
+   "P": 0.0,
+   "N": 0.7993882275132276,
+   "false_alert_rate": 0.008273809523809524,
+   "validity": 0.8168067226890756,
+   "ordinary_recall": 0.0,
+   "natural_mean_reward": 0.7630252100840336,
+   "n_positive_groups": 3,
+   "n_negative_groups": 8
+  }
+ },
+ "n_records": 1625,
+ "D": 0.29471779336734694,
+ "D_available_tasks": 4,
+ "false_alert_rate": 0.026340455198226045,
+ "validity": 0.7753846153846153,
+ "termination": {
+  "context_exhausted": 36,
+  "graded": 1587,
+  "infrastructure_error": 2
+ },
+ "trivial_policy": {
+  "per_task": {
+   "classification": {
+    "P": 0.0,
+    "N": 1.0
+   },
+   "lm": {
+    "P": 0.0,
+    "N": 1.0
+   },
+   "persistence": {
+    "P": 0.0,
+    "N": 1.0
+   },
+   "exfiltration": {
+    "P": 0.0,
+    "N": 1.0
+   }
+  },
+  "D": 0.5
+ }
+}
